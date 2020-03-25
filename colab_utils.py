@@ -61,7 +61,7 @@ def imshow(tensor, title=None, figsize=None):
     title: The title for the rendered image. Passed to Matplotlib.
     figsize: The size (in inches) for the image. Passed to Matplotlib.
   """
-  image_unloader = transforms.ToPILImage
+  image_unloader = transforms.ToPILImage()
   tensor = tensor.cpu().clone().squeeze(0)
   image = image_unloader(tensor)
 

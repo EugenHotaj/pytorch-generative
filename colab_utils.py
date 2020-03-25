@@ -8,6 +8,7 @@ import os
 
 import PIL
 from google.colab import files
+import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 

@@ -21,7 +21,7 @@ def upload_files():
   for name, data in uploaded.items():
     with open(f'/tmp/{name}', 'wb') as f:
       f.write(data)
-  os.listdir('/tmp')
+  print(os.listdir('/tmp'))
 
 
 def load_image(path, size=None, remove_alpha_channel=True):
@@ -39,7 +39,7 @@ def load_image(path, size=None, remove_alpha_channel=True):
   if size is not None:
     size = size if isinstance(size, collections.Sequence) else (size, size)
     assert len(size) == 2, "'size' must either be a scalar or contain 2 items"
-    transform.append(Resize(size))
+    transform.append(transforms.Resize(size))
   transform.append(transforms.ToTensor())
   image_loader = transforms.Compose(transform)
 

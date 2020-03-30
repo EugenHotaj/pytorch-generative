@@ -13,6 +13,11 @@ import torch
 from torchvision import transforms
 
 
+def get_device():
+  """Returns the appropriate device depending on what's available."""
+  return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def upload_files():
   """Creates a widget to upload files from your local machine to Colab.
 

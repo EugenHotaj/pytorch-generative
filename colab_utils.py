@@ -27,7 +27,6 @@ def upload_files():
   for name, data in uploaded.items():
     with open(f'/tmp/{name}', 'wb') as f:
       f.write(data)
-  print(os.listdir('/tmp'))
 
 
 def load_image(path, size=None, remove_alpha_channel=True):

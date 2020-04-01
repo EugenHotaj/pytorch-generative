@@ -12,6 +12,14 @@ import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 
+# Always use html5 for animations so they can be rendered inline on Colab.
+matplotlib.rcParams['animation.html'] = 'html5'
+
+_IMAGE_UNLOADER = transforms.Compose([
+  transforms.Lambda(lambda x: x.cpu().clone().squeeze(0)),
+  transforms.ToPILImage()
+])
+
 
 def get_device():
   """Returns the appropriate device depending on what's available."""
@@ -65,11 +73,45 @@ def imshow(tensor, title=None, figsize=None):
     title: The title for the rendered image. Passed to Matplotlib.
     figsize: The size (in inches) for the image. Passed to Matplotlib.
   """
-  image_unloader = transforms.ToPILImage()
-  tensor = tensor.cpu().clone().squeeze(0)
-  image = image_unloader(tensor)
+  image = _IMAGE_UNLOADER(tensor)
 
   plt.figure(figsize=figsize)
   plt.title(title)
   plt.axis('off')
   plt.imshow(image)
+
+
+def animate(frames, figsize=None, fps=24):
+  """Renders the given frames together into an animation.
+  
+  Args:
+    frames: Either a list, iterator, or generator of images in torch.Tensor 
+      format.
+    figsize: The display size for the animation; passed to Matplotlib.
+    fps: The number of frames to render per second (i.e. frames per second).
+  Returns:
+    The Matplotlib animation object.
+  """
+  fig = plt.figure(figsize=figsize)
+  fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
+  plt.axis('off')
+
+  # We pass a fake 2x2 image to 'imshow' since it does not allow None or empty
+  # lists to be passed in. The fake image data is then updated by animate_fn.
+  image = plt.imshow([[0, 0], [0, 0]])
+  def animate_fn(frame):
+    frame = _IMAGE_UNLOADER(frame)
+    image.set_data(frame)
+    return image,
+
+  anim = animation.FuncAnimation(
+      fig, 
+      animate_fn, 
+      frames=frames, 
+      interval=1000 / fps,
+      blit=True,
+      # Caching frames causes OOMs in Colab when there are a lot of frames or 
+      # the size of individual frames is large.
+      cache_frame_data=False)
+  plt.close(anim._fig)
+  return anim

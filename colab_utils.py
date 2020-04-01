@@ -9,6 +9,7 @@ import os
 import PIL
 from google.colab import files
 import matplotlib
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms

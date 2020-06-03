@@ -152,13 +152,13 @@ def _eval_one_epoch(model, loss_fn, eval_loader, device):
     return eval_loss / n_examples
 
 
-def train_andor_eval(model,
-                     loss_fn,
-                     optimizer=None,
-                     n_epochs=None,
-                     train_loader=None,
-                     eval_loader=None,
-                     device=torch.device('cpu')):
+def train_andor_evaluate(model,
+                         loss_fn,
+                         optimizer=None,
+                         n_epochs=None,
+                         train_loader=None,
+                         eval_loader=None,
+                         device=torch.device('cpu')):
     """Trains and/or evaluates the model on the datasets.
     
     Evaluations are run after every epoch.
@@ -194,5 +194,6 @@ def train_andor_eval(model,
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
     else:
-        eval_losses.append(_eval_one_epoch)
+        eval_losses.append(
+                _eval_one_epoch(model, loss_fn, eval_loader, device))
     return train_losses, eval_losses

@@ -117,3 +117,82 @@ def animate(frames, figsize=None, fps=24):
       cache_frame_data=False)
   plt.close(anim._fig)
   return anim
+
+
+def _train_one_epoch(model, loss_fn, optimizer, train_loader, device):
+    model.train()
+    train_loss, n_examples = 0., 0
+    for x, y in train_loader:
+        batch_size = x.shape[0]
+        n_examples += batch_size
+
+        optimizer.zero_grad()
+        x = x.to(device)
+        preds = model(x)
+        loss = loss_fn(x, y, preds)
+        loss.backward()
+        optimizer.step()
+
+        train_loss += loss.item() * batch_size
+    return train_loss / n_examples
+
+
+def _eval_one_epoch(model, loss_fn, eval_loader, device):
+    model.eval()
+    eval_loss, n_examples = 0., 0
+    with torch.no_grad():
+        for x, y in eval_loader:
+            batch_size = x.shape[0]
+            n_examples += batch_size
+
+            x = x.to(device)
+            preds = model(x)
+            loss = loss_fn(x, y, preds)
+            eval_loss += loss.item() * batch_size
+    return eval_loss / n_examples
+
+
+def train_andor_eval(model,
+                     loss_fn,
+                     optimizer=None,
+                     n_epochs=None,
+                     train_loader=None,
+                     eval_loader=None,
+                     device=torch.device('cpu')):
+    """Trains and/or evaluates the model on the datasets.
+    
+    Evaluations are run after every epoch.
+
+    Args:
+        model: The model to train and/or evaluate.
+        loss_fn: A fn(inputs, targets, predictions)->loss.
+        optimizer: The optimizer to use when training. Must not be None if
+            train_loader is not None.
+        n_epochs: The number of epochs to train for. Must not be None if 
+            train_loader is not None. Eval always runs for one full epoch.
+        train_loader: A DataLoader for the training set.
+        eval_loader: A DataLoader for the evaluation set.
+        device: The device to place the model and data batches on.
+    Returns:
+        (train_losses, eval_losses) per epoch.
+    """
+    model = model.to(device)
+
+    train_losses = []
+    eval_losses = []
+    assert train_loader is not None or eval_loader is not None, \
+           'train_loader and eval_loader cannot both be None'
+    if train_loader is not None:
+        assert optimizer is not None, 'optimizer must be provided for training'
+        assert n_epochs >= 1, 'n_epochs must be >= 0 for training'
+
+        for epoch in range(1, n_epochs + 1):
+            train_loss = _train_one_epoch(model, loss_fn, optimizer, 
+                                          train_loader, device)
+            eval_loss = _eval_one_epoch(model, loss_fn, eval_loader, device)
+            print(f'[{epoch}]: train_loss={train_loss} eval_loss={eval_loss}')
+            train_losses.append(train_loss)
+            eval_losses.append(eval_loss)
+    else:
+        eval_losses.append(_eval_one_epoch)
+    return train_losses, eval_losses

@@ -210,7 +210,7 @@ def train_andor_evaluate(model,
                     model, loss_fn, optimizer, train_loader, device)
             eval_loss, _ = _eval_one_epoch(
                     model, loss_fn, eval_loader, device)
-            print(f'[{epoch} | {examples_per_sec}]: train_loss={train_loss} '
+            print(f'[{epoch}|{examples_per_sec}]: train_loss={train_loss} '
                   f'eval_loss={eval_loss}')
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)

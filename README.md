@@ -26,7 +26,7 @@ Even though MADE is able to achieve lower NLL than NADE (albeit with *16x* more 
 ### NADE
 
 Code: https://github.com/EugenHotaj/nn-hallucinations/blob/master/NADE.ipynb <br>
-Paper: http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf 
+Paper: http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf <br>
 NLL: **85.65** (ours) 88.86 (paper)
 
 We used the Adam optimizer instead of plain SGD, which may account for part of the improvement we see over the paper results. 

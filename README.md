@@ -33,7 +33,7 @@ We used the Adam optimizer instead of plain SGD, which may account for part of t
 
 ### Neural Style Transfer
 
-Blog: https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489
+Blog: https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489 <br>
 Code: https://github.com/EugenHotaj/nn-hallucinations/blob/master/NADE.ipynb <br>
 Paper: https://arxiv.org/pdf/1508.06576.pdf
 

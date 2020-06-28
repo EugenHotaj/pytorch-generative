@@ -21,7 +21,7 @@ Our hypothesis is that random pixels convey more information about an image than
 Using more than 1 mask seems to heavily regularize the MADE model with no apparent benefits (at least when training for the same number of epochs). Even in the paper, the authors only gain .36 NLL by using 32 masks and introducing an "ensembling" procedure at test time. The complexity of this approach seemed to outweigh the benefits so we did not implement it.
 
 #### Sample quality
-Even though MADE is able to achieve lower NLL than NADE (albeit with *16x* more neurons in the hidden layer), NADE seems to generate more (subjectively) pleasing samples.
+Even though MADE is able to achieve lower NLL than NADE (albeit with *16x* more neurons in the hidden layer), NADE seems to generate (subjectively) more pleasing samples. This matches what is reported in [Theis et al. (2016)](https://arxiv.org/abs/1511.01844), namely that good NLL does not necessarily lead to higher quality samples. 
 
 ### NADE
 

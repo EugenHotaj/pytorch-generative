@@ -56,6 +56,12 @@ class Trainer:
         loss /= n_examples
         return loss, examples_per_sec
 
+    # TODO(eugenhotaj): I'm not 100% sure this is the best approach. For 
+    # example, to add gradient clipping, we have to override _train_one_batch()
+    # just to copy the exact same code plus one extra line. The fastai library
+    # uses hooks but that seems like a very heavy-handed approach. Another 
+    # option is to just expose gradient_clipping (and other future options) 
+    # as __init__ parameters and handle them automatically for the user.
     def _train_one_batch(self, x, y):
         """Trains the model on a single batch of examples.
 

@@ -67,13 +67,13 @@ class Trainer:
         for epoch in range(1, n_epochs + 1):
           # TODO(eugenhota): Tune this bar formatting. What is useful to log?
           progress = tqdm.tqdm(
-              desc=f'[{epoch}]', 
               unit='example', unit_scale=self._train_loader.batch_size, 
-              bar_format= '{desc}: {percentage:3.0f}% ({rate_fmt}) {postfix}',
-              total=len(self._train_loader))
-          postfix = collections.defaultdict(float)
+              bar_format= '{desc}{percentage:3.0f}% ({rate_fmt}) {postfix}',
+              total=len(self._train_loader) + len(self._eval_loader))
+          postfix = {'train_loss': None, 'eval_loss': None}
 
           # Train.
+          progress.set_description(f'[{epoch}|training]')
           self._model.train()
           train_loss = None
           for i, (x, y), in enumerate(self._train_loader):
@@ -86,21 +86,25 @@ class Trainer:
             progress.set_postfix(postfix)
             progress.update()
 
-          # TODO(eugenhotaj): tqdm takes the evaluation time into account when
-          # calculating the final example/s. Ideally, we don't want this. 
-          # Alternatively, we can have a second progress bar for eval?
-          # Evaluate.
+          # Evaluate
+          progress.set_description(f'[{epoch}|evaluating]')
+          # Change progress bar's unit_scale in case train and eval batch_sizes
+          # are different.
+          progress.unit_scale = self._eval_loader.batch_size
           self._model.eval()
-          total_examples, eval_loss = 0, 0.
+          total_examples, total_loss = 0, 0.
           with torch.no_grad():
             for x, y, in self._eval_loader:
               x, y = x.to(self._device), y.to(self._device)
               n_examples = x.shape[0]
               total_examples += n_examples
-              eval_loss += self._eval_one_batch(x, y) * n_examples
-          eval_loss /= total_examples
-          postfix['eval_loss'] = eval_loss
-          progress.set_postfix(postfix)
+              total_loss += self._eval_one_batch(x, y) * n_examples
+              eval_loss = total_loss / total_examples
+              postfix['eval_loss'] = eval_loss
+              progress.set_postfix(postfix)
+              progress.update()
+
+          progress.set_description(f'[{epoch}]')
           progress.close()
 
           # Log.

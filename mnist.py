@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-from trainer import Trainer
+from pytorch_generative.trainer import Trainer
 
 
 class Net(nn.Module):
@@ -72,4 +72,4 @@ if __name__ == '__main__':
     loss_fn = lambda x, y, preds: criterion(preds, y)
 
     trainer = Trainer(model, loss_fn, optimizer, train_loader, test_loader)
-    trainer.interleaved_train_and_eval(n_epochs=1)
+    trainer.interleaved_train_and_eval(n_epochs=2)

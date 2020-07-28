@@ -1,8 +1,9 @@
 """Utilities to train PyTorch models with less boilerplate."""
 
-import torch
-import time
+import collections
 
+import torch
+import tqdm
 
 class Trainer:
     """An object which encapsulates the training and evaluation loop.
@@ -34,28 +35,6 @@ class Trainer:
         self.train_losses = []
         self.eval_losses = []
         
-    def _run_one_epoch(self, batch_fn, loader):
-        """Runs and instruments one epoch.
-
-        Args:
-            batch_fn: The fn(Xs, ys)->loss which takes in a batch of data and 
-                returns a scalar loss. The batch_fn can do whatever it wants, 
-                such as train a model on the batch, eval on the batch, etc. 
-            loader: The DataLoader to use.
-        """
-        start_time = time.time()
-        loss, n_examples = 0., 0
-        for x, y, in loader:
-            x, y = x.to(self._device), y.to(self._device)
-            batch_size = x.shape[0]
-            n_examples += batch_size
-            batch_loss = batch_fn(x, y)
-            loss += batch_loss.item() * batch_size
-        total_time = time.time() - start_time
-        examples_per_sec = round(n_examples / total_time)
-        loss /= n_examples
-        return loss, examples_per_sec
-
     # TODO(eugenhotaj): I'm not 100% sure this is the best approach. For 
     # example, to add gradient clipping, we have to override _train_one_batch()
     # just to copy the exact same code plus one extra line. The fastai library
@@ -73,29 +52,49 @@ class Trainer:
         loss = self._loss_fn(x, y, preds)
         loss.backward()
         self._optimizer.step()
-        return loss
+        return loss.item()
 
     def _eval_one_batch(self, x, y):
         """Evaluates the model on a single batch of examples."""
         preds = self._model(x)
-        return self._loss_fn(x, y, preds)
+        loss = self._loss_fn(x, y, preds)
+        return loss.item()
 
     def interleaved_train_and_eval(self, n_epochs):
         """Trains and evaluates (after each epoch) for n_epochs."""
-        for _ in range(1, n_epochs + 1):
-            # Train.
-            self._model.train()
-            train_loss, examples_per_sec = self._run_one_epoch(
-                    self._train_one_batch, self._train_loader)
 
-            # Evaluate.
-            self._model.eval()
-            with torch.no_grad():
-                eval_loss, _ = self._run_one_epoch(
-                        self._eval_one_batch, self._eval_loader)
+        # TODO(eugenhota): Tune this bar formatting. What is useful to log?
+        bar_fmt = '{desc}: {percentage:3.0f}% ({rate_fmt}) {postfix}'
+ 
+        for epoch in range(1, n_epochs + 1):
+          progress = tqdm.tqdm(desc=f'[{epoch}]', unit='batch', 
+                               bar_format=bar_fmt, total=len(self._train_loader)+1)
+          postfix = collections.defaultdict(float)
 
-            # Log.
-            self.train_losses.append(train_loss)
-            self.eval_losses.append(eval_loss)
-            print(f'[{len(self.train_losses)}|{examples_per_sec}]: '
-                  f'train_loss={train_loss} eval_loss={eval_loss}')
+          # Train.
+          self._model.train()
+          for x, y, in self._train_loader:
+            x, y = x.to(self._device), y.to(self._device)
+            train_loss = self._train_one_batch(x, y)
+            postfix['train_loss'] = train_loss
+            progress.set_postfix(postfix)
+            progress.update()
+
+          # Evaluate.
+          self._model.eval()
+          total_examples, eval_loss = 0, 0.
+          with torch.no_grad():
+            for x, y, in self._eval_loader:
+              x, y = x.to(self._device), y.to(self._device)
+              n_examples = x.shape[0]
+              total_examples += n_examples
+              eval_loss += self._eval_one_batch(x, y) * n_examples
+          eval_loss /= total_examples
+          postfix['eval_loss'] = eval_loss
+          progress.set_postfix(postfix)
+          progress.update()
+          progress.close()
+
+          # Log.
+          self.train_losses.append(train_loss)
+          self.eval_losses.append(eval_loss)

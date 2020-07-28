@@ -63,12 +63,13 @@ class Trainer:
     def interleaved_train_and_eval(self, n_epochs):
         """Trains and evaluates (after each epoch) for n_epochs."""
 
-        # TODO(eugenhota): Tune this bar formatting. What is useful to log?
-        bar_fmt = '{desc}: {percentage:3.0f}% ({rate_fmt}) {postfix}'
  
         for epoch in range(1, n_epochs + 1):
+          # TODO(eugenhota): Tune this bar formatting. What is useful to log?
           progress = tqdm.tqdm(
-              desc=f'[{epoch}]', unit='batch', bar_format=bar_fmt, 
+              desc=f'[{epoch}]', 
+              unit='example', unit_scale=self._train_loader.batch_size, 
+              bar_format= '{desc}: {percentage:3.0f}% ({rate_fmt}) {postfix}',
               total=len(self._train_loader))
           postfix = collections.defaultdict(float)
 
@@ -85,6 +86,9 @@ class Trainer:
             progress.set_postfix(postfix)
             progress.update()
 
+          # TODO(eugenhotaj): tqdm takes the evaluation time into account when
+          # calculating the final example/s. Ideally, we don't want this. 
+          # Alternatively, we can have a second progress bar for eval?
           # Evaluate.
           self._model.eval()
           total_examples, eval_loss = 0, 0.
@@ -97,7 +101,6 @@ class Trainer:
           eval_loss /= total_examples
           postfix['eval_loss'] = eval_loss
           progress.set_postfix(postfix)
-          progress.update(0)
           progress.close()
 
           # Log.

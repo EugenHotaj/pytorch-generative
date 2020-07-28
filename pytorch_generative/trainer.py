@@ -74,9 +74,13 @@ class Trainer:
 
           # Train.
           self._model.train()
-          for x, y, in self._train_loader:
+          train_loss = None
+          for i, (x, y), in enumerate(self._train_loader):
             x, y = x.to(self._device), y.to(self._device)
-            train_loss = self._train_one_batch(x, y)
+            if train_loss is None:
+              train_loss =  self._train_one_batch(x, y)
+            else:
+              train_loss = .9 * train_loss + .1 * self._train_one_batch(x, y)
             postfix['train_loss'] = train_loss
             progress.set_postfix(postfix)
             progress.update()
@@ -93,7 +97,7 @@ class Trainer:
           eval_loss /= total_examples
           postfix['eval_loss'] = eval_loss
           progress.set_postfix(postfix)
-          progress.update()
+          progress.update(0)
           progress.close()
 
           # Log.

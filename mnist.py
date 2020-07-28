@@ -1,5 +1,7 @@
 """Simple MNIST model to test the library."""
 
+import argparse
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,54 +24,27 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(model, train_loader, optimizer, epoch):
-    model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        optimizer.zero_grad()
-        output = model(data)
-        loss = F.nll_loss(output, target)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % 100  == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
-
-
-def test(model, test_loader):
-    model.eval()
-    test_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for data, target in test_loader:
-            output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
-
-    test_loss /= len(test_loader.dataset)
-
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
-
-
 if __name__ == '__main__':
-    transform=transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-    train_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('./data', train=True, download=True, transform=transform),
-            batch_size=256)
-    test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST('./data', train=False, download=True, transform=transform),
-            batch_size=256)
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--n_epochs', type=int, help='number of training epochs', 
+                      default=1)
+  args = parser.parse_args()
 
-    model = Net()
-    optimizer = optim.Adam(model.parameters())
-    criterion = nn.NLLLoss()
-    loss_fn = lambda x, y, preds: criterion(preds, y)
+  transform=transforms.Compose([
+      transforms.ToTensor(),
+      transforms.Normalize((0.1307,), (0.3081,))
+  ])
+  train_loader = torch.utils.data.DataLoader(
+          datasets.MNIST('./data', train=True, download=True, transform=transform),
+          batch_size=256, shuffle=True)
+  test_loader = torch.utils.data.DataLoader(
+          datasets.MNIST('./data', train=False, download=True, transform=transform),
+          batch_size=256)
 
-    trainer = Trainer(model, loss_fn, optimizer, train_loader, test_loader)
-    trainer.interleaved_train_and_eval(n_epochs=2)
+  model = Net()
+  optimizer = optim.Adam(model.parameters())
+  criterion = nn.NLLLoss()
+  loss_fn = lambda x, y, preds: criterion(preds, y)
+
+  trainer = Trainer(model, loss_fn, optimizer, train_loader, test_loader)
+  trainer.interleaved_train_and_eval(n_epochs=args.n_epochs)

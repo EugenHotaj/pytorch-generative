@@ -3,7 +3,7 @@
 import collections
 
 import torch
-import tqdm
+import tqdm.autonotebook as tqdm
 
 class Trainer:
     """An object which encapsulates the training and evaluation loop.

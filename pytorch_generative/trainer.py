@@ -67,8 +67,9 @@ class Trainer:
         bar_fmt = '{desc}: {percentage:3.0f}% ({rate_fmt}) {postfix}'
  
         for epoch in range(1, n_epochs + 1):
-          progress = tqdm.tqdm(desc=f'[{epoch}]', unit='batch', 
-                               bar_format=bar_fmt, total=len(self._train_loader)+1)
+          progress = tqdm.tqdm(
+              desc=f'[{epoch}]', unit='batch', bar_format=bar_fmt, 
+              total=len(self._train_loader))
           postfix = collections.defaultdict(float)
 
           # Train.

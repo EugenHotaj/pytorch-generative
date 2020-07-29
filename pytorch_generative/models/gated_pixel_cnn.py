@@ -132,6 +132,7 @@ class GatedPixelCNN(nn.Module):
 
   def __init__(self, 
                in_channels, 
+               out_dims=1,
                n_gated=10,
                gated_channels=128,
                head_channels=32):
@@ -139,13 +140,17 @@ class GatedPixelCNN(nn.Module):
     
     Args:
       in_channels: The number of channels in the input.
-      n_channels: The number of gated layers (not including the input layers).
+      out_dims: The dimensionality of the output. Given input of the form
+        (N, C, H, W), the output from the GatedPixelCNN model will be 
+        (N, out_dim, C, H, W).
+      n_gated: The number of gated layers (not including the input layers).
       gated_channels: The number of channels to use in the gated layers.
       head_channels: The number of channels to use in the 1x1 convolution blocks
         in the head after all the gated channels.
     """
 
     super().__init__()
+    self._out_dims = out_dims
     self._input = GatedPixelCNNLayer(
       in_channels=in_channels,
       out_channels=gated_channels,
@@ -165,16 +170,18 @@ class GatedPixelCNN(nn.Module):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=in_channels,
+                  out_channels=out_dim * in_channels,
                   kernel_size=1),
         nn.Sigmoid())
 
   def forward(self, x):
+    n, c, h, w = x.shape
     vstack, hstack, skip_connections = self._input(x, x)
     for gated_layer in self._gated_layers:
       vstack, hstack, skip = gated_layer(vstack, hstack)
       skip_connections += skip
-    return self._head(skip_connections)
+    out = self._head(skip_connections)
+    return out.view((n, self._out_dims, c, h, w))
 
 
   def sample(self, condition_on=None):
@@ -194,10 +201,11 @@ class GatedPixelCNN(nn.Module):
       else:
         conditioned_on = conditioned_on.clone()
 
+      # TODO(eugenhotaj): Remove hardcoding for MNIST sampling.
       for row in range(28):
         for column in range(28):
           for channel in range(1):
-            out = self.forward(conditioned_on)[:, channel, row, column]
+            out = self.forward(conditioned_on).squeeze(dim=1)[:, channel, row, column]
             out = distributions.Bernoulli(probs=out).sample()
             conditioned_on[:, channel, row, column] = torch.where(
                 conditioned_on[:, channel, row, column] < 0, out, 

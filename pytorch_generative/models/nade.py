@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 
-class NADE(nn.Module)
+class NADE(nn.Module):
   """The Neural Autoregressive Distribution Estimator (NADE) model."""
 
   def __init__(self, input_dim, hidden_dim):

@@ -2,7 +2,6 @@
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
 from pytorch_generative.models.made import MADE
@@ -39,7 +38,7 @@ class TinyCNN(nn.Module):
           kernel_size=3, padding=1)
 
   def forward(self, x):
-    return F.sigmoid(self._conv(x))
+    return torch.sigmoid(self._conv(x))
 
 
 __all__ = ['GatedPixelCNN', 'MADE', 'NADE', 'TinyCNN']

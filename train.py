@@ -44,12 +44,15 @@ def main(args):
     return criterion(preds, x).sum(dim=1).mean()
 
   model_trainer = trainer.Trainer(model, loss_fn, optimizer, train_loader, 
-                                  test_loader)
+                                  test_loader, log_dir=args.log_dir)
   model_trainer.interleaved_train_and_eval(n_epochs=args.n_epochs)
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
+  parser.add_argument(
+      '--log_dir', type=str, help='the directory where to log data',
+      default='/tmp/runs')
   parser.add_argument(
       '--model', type=str, help='the available models to train', 
       default='tiny_cnn', choices=list(MODEL_MAP.keys()))

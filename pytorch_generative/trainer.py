@@ -19,6 +19,7 @@ class Trainer:
                  optimizer, 
                  train_loader, 
                  eval_loader,
+                 lr_scheduler=None,
                  log_dir='/tmp/runs',
                  device=torch.device('cpu')):
         """Initializes a new Trainer instance.
@@ -39,84 +40,97 @@ class Trainer:
         self._optimizer = optimizer
         self._train_loader = train_loader
         self._eval_loader = eval_loader
+        self._lr_scheduler = lr_scheduler
         self._log_dir = log_dir
         self._device = device
 
+        self._step = 0
+        self._examples_processed = 0
+        self._time_taken = 0
         self._summary_writer = tensorboard.SummaryWriter(
             self._log_dir, max_queue=100)
 
         self.train_losses = []
         self.eval_losses = []
         
-    # TODO(eugenhotaj): I'm not 100% sure this is the best approach. For 
-    # example, to add gradient clipping, we have to override _train_one_batch()
-    # just to copy the exact same code plus one extra line. The fastai library
-    # uses hooks but that seems like a very heavy-handed approach. Another 
-    # option is to just expose gradient_clipping (and other future options) 
-    # as __init__ parameters and handle them automatically for the user.
-    def _train_one_batch(self, x, y):
+    def train_one_batch(self, x, y):
         """Trains the model on a single batch of examples.
 
-        Subclasses can override this method to define custom training
-        procedures.
+        Subclasses can override this method to define custom training loops.
         """
-        self._optimizer.zero_grad()
         preds = self._model(x)
         loss = self._loss_fn(x, y, preds)
-        loss.backward()
-        self._optimizer.step()
         return loss
 
+    def _train_one_batch(self, x, y):
+      self._model.train()
+      x, y = x.to(self._device), y.to(self._device)
+      self._optimizer.zero_grad()
+      loss = self.train_one_batch(x, y)
+      loss.backward()
+      self._optimizer.step()
+      if self._lr_scheduler is not None:
+        self._lr_scheduler.step()
+      return loss.item()
+
+    def eval_one_batch(self, x, y):
+      """Evaluates the model on a single batch of examples."""
+      preds = self._model(x)
+      loss = self._loss_fn(x, y, preds)
+      return loss
+
     def _eval_one_batch(self, x, y):
-        """Evaluates the model on a single batch of examples."""
-        preds = self._model(x)
-        loss = self._loss_fn(x, y, preds)
-        return loss
+      with torch.no_grad():
+        self._model.eval()
+        x, y = x.to(self._device), y.to(self._device)
+        loss = self.eval_one_batch(x, y)
+        return loss.item()
 
     def interleaved_train_and_eval(self, n_epochs):
         """Trains and evaluates (after each epoch) for n_epochs."""
 
-        step, examples_processed, time_taken = 0, 0, 0.,
         for epoch in range(1, n_epochs + 1):
           start_time = time.time()
 
           # Train.
-          self._model.train()
           train_loss = None
           for i, (x, y), in enumerate(self._train_loader):
-            x, y = x.to(self._device), y.to(self._device)
-            examples_processed += x.shape[0]
-            if train_loss is None:
-              train_loss =  self._train_one_batch(x, y).item()
-            else:
-              train_loss = .9 * train_loss + .1 * self._train_one_batch(x, y).item()
-            self._summary_writer.add_scalars('loss', 
-                                             {'train': train_loss}, step)
+            self._examples_processed += x.shape[0]
+            lrs = {
+                f'group_{i}': param['lr'] 
+                for i, param in enumerate(self._optimizer.param_groups)
+            }
+            self._summary_writer.add_scalars('loss/lr', lrs, self._step)
+            train_loss_ = self._train_one_batch(x, y)
+            train_loss = (train_loss_ if train_loss is None else 
+                          .9 * train_loss + .1 * train_loss_)
+            self._summary_writer.add_scalars(
+                'loss', {'train': train_loss}, self._step)
 
-            time_taken += time.time() - start_time
+            self._time_taken += time.time() - start_time
             start_time = time.time()
             self._summary_writer.add_scalar(
-                'perf/examples_per_sec', examples_processed/time_taken, step)
+                'perf/examples_per_sec', 
+                self._examples_processed / self._time_taken, 
+                self._step)
             self._summary_writer.add_scalar(
                 'perf/millis_per_example', 
-                time_taken/examples_processed * 1000, 
-                step)
-            self._summary_writer.add_scalar('progress/epoch', epoch, step)
-            self._summary_writer.add_scalar('progress/step', step, step)
-            step += 1
+                self._time_taken / self._examples_processed * 1000, 
+                self._step)
+            self._summary_writer.add_scalar('progress/epoch', epoch, self._step)
+            self._summary_writer.add_scalar('progress/step', self._step, self._step)
+            self._step += 1
           self.train_losses.append(train_loss)
 
           # Evaluate
           self._model.eval()
           total_examples, total_loss = 0, 0.
-          with torch.no_grad():
-            for x, y, in self._eval_loader:
-              x, y = x.to(self._device), y.to(self._device)
-              n_examples = x.shape[0]
-              total_examples += n_examples
-              total_loss += self._eval_one_batch(x, y).item() * n_examples
-              eval_loss = total_loss / total_examples
-          self._summary_writer.add_scalars('loss', {'eval': eval_loss}, step)
+          for x, y, in self._eval_loader:
+            n_examples = x.shape[0]
+            total_examples += n_examples
+            total_loss += self._eval_one_batch(x, y) * n_examples
+            eval_loss = total_loss / total_examples
+          self._summary_writer.add_scalars('loss', {'eval': eval_loss}, self._step)
           self.eval_losses.append(eval_loss)
 
           self._summary_writer.flush()

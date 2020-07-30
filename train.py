@@ -4,9 +4,9 @@ import argparse
 
 import torch
 from torch import distributions
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+from torch import nn
+from torch import optim
+from torch.optim import lr_scheduler
 from torchvision import datasets
 from torchvision import transforms
 
@@ -36,6 +36,7 @@ def main(args):
 
   model = MODEL_MAP[args.model](n_channels=1)
   optimizer = optim.Adam(model.parameters())
+  scheduler = lr_scheduler.MultiplicativeLR(optimizer, lambda _: 0.9984)
 
   criterion = nn.BCELoss(reduction='none')
   def loss_fn(x, _, preds):
@@ -43,8 +44,9 @@ def main(args):
     x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))
     return criterion(preds, x).sum(dim=1).mean()
 
-  model_trainer = trainer.Trainer(model, loss_fn, optimizer, train_loader, 
-                                  test_loader, log_dir=args.log_dir)
+  model_trainer = trainer.Trainer(
+      model, loss_fn, optimizer, train_loader, test_loader, 
+      lr_scheduler=scheduler, log_dir=args.log_dir)
   model_trainer.interleaved_train_and_eval(n_epochs=args.n_epochs)
 
 

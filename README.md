@@ -8,7 +8,7 @@ Binary MNIST (NLL):
 | Algorithm | Our Results | Best Other Results | Links |
 | --- | ---| --- | --- |
 | Gated PixelCNN | 81.50 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/gated_pixel_cnn.ipynb) |
-| PixelCNN | 81.50 | **81.30** \[1\] | [Code](), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_cnn.ipynb) |
+| PixelCNN | 81.45 | **81.30** \[1\] | [Code](), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_cnn.ipynb) |
 | MADE | **84.867** | 88.04 \[4\]| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/MADE.ipynb) |
 | NADE | **85.65** | 88.86 \[5\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/NADE.ipynb) |
 

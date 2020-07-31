@@ -1,8 +1,43 @@
-"""TODO(eugenhotaj): Add docs."""
+"""Implementation of PixelCNN [1].
+
+TODO(eugenhotaj): Explain.
+
+NOTE: Our implementation does *not* use autoregressive channel masking. This
+means that each output depends on whole pixels and not sub-pixels. For outputs
+with multiple channels, other methods can be used, e.g. [2].
+
+[1]: https://arxiv.org/abs/1606.05328
+[2]: https://arxiv.org/abs/1701.05517
+"""
+
+import torch
+from torch import distributions
+from torch import nn
+
 
 class MaskedConv2d(nn.Conv2d):
+  """A Conv2d layer masked to respect the autoregressive property.
+
+  Autoregressive masking means that the computation of the current pixel only
+  depends on itself, pixels to the left, and pixels above. When the convolution
+  is causally masked (i.e. 'is_causal=True'), the computation of the current 
+  pixel does not depend on itself.
+
+  E.g. for a 3x3 kernel, the following masks are generated for each channel:
+                      [[1 1 1],                   [[1 1 1]
+      is_causal=False  [1 1 0],    is_causal=True  [1 0 0]
+                       [0 0 0]]                    [0 0 0]
+  In [1], they refer to the left masks as 'type A' and right as 'type B'. 
+
+  N.B.: This layer does *not* implement autoregressive channel masking.
+  """
 
   def __init__(self, is_causal, *args, **kwargs):
+    """Initializes a new MaskedConv2d instance.
+    
+    Args:
+      is_causal: Whether the convolution should be causally masked.
+    """
     super().__init__(*args, **kwargs)
 
     i, o, h, w = self.weight.shape
@@ -20,11 +55,17 @@ class MaskedConv2d(nn.Conv2d):
     
     
 class MaskedResidualBlock(nn.Module):
+  """A residual block masked to respect the autoregressive property."""
   
   def __init__(self, n_channels):
+    """Initializes a new MaskedResidualBlock instance.
+
+    Args:
+      n_channels: The number of input (and output) channels.
+    """
     super().__init__()
     self._net = nn.Sequential(
-        # NOTE(eugenhotaj): The PixelCNN paper users Relu->Conv2d since they do
+        # NOTE(eugenhotaj): The PixelCNN paper users ReLU->Conv2d since they do
         # not use a ReLU in the first layer. 
         nn.Conv2d(in_channels=n_channels, 
                   out_channels=n_channels//2, 
@@ -46,23 +87,26 @@ class MaskedResidualBlock(nn.Module):
 
 
 class PixelCNN(nn.Module):
+  """The PixelCNN model."""
 
   def __init__(self, 
                in_channels, 
+               out_dims=1,
+               n_residual=15,
                residual_channels=128, 
-               head_channels=32,
-               n_residual_blocks=15):
+               head_channels=32):
     """Initializes a new PixelCNN instance.
     
     Args:
       in_channels: The number of channels in the input image (typically either 
         1 or 3 for black and white or color images respectively).
+      out_dims: The dimension of the output. Given input of the form 
+        (N, C, H, W), the output from the model will be (N, out_dim, C, H, W).
+      n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
       head_channels: The number of channels to use in the two 1x1 convolutional
         layers at the head of the network.
-      n_residual_blocks: The number of residual blocks to use.
     """
-
     super().__init__()
 
     self._input = MaskedConv2d(is_causal=True,
@@ -93,6 +137,9 @@ class PixelCNN(nn.Module):
       skip += x
     return self._head(skip)
 
+  # TODO(eugenhotaj): We need to update the sampling code so it can handle 
+  # outputs with dim > 1. One thing that's unclear: should the sample method
+  # be part of the model?
   def sample(self):
     """Samples a new image.
     

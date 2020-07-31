@@ -1,15 +1,16 @@
-# nn-hallucinations
-*Repeated attempts at teaching NNs how to be more creative than me.*
+# pytorch-generative
+*Repeated attempts at teaching NNs how to be more creative than myself.*
 
 ## Autoregressive Generative Models
 
 Binary MNIST (NLL): 
 
-| Algorithm | Our Results | Best Other Results |
-| --- | ---| --- |
-| Gated PixelCNN | ~81.50 | **81.30** \[1\] |
-| MADE | **84.867** | 88.04 \[4\]|
-| NADE | 85.65 | 88.86 \[5\] |
+| Algorithm | Our Results | Best Other Results | Links |
+| --- | ---| --- | --- |
+| Gated PixelCNN | 81.50 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/gated_pixel_cnn.ipynb) |
+| PixelCNN | 81.45 | **81.30** \[1\] | [Code](), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_cnn.ipynb) |
+| MADE | **84.867** | 88.04 \[4\]| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/MADE.ipynb) |
+| NADE | **85.65** | 88.86 \[5\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/NADE.ipynb) |
 
 *Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
 
@@ -51,7 +52,9 @@ We used the Adam optimizer instead of plain SGD, which may account for part of t
 
 ## Neural Style Transfer
 Blog: https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489 <br>
+Notebook: https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/style_transfer.ipynb <br>
 Paper: https://arxiv.org/pdf/1508.06576.pdf
 
 ## Compositional Pattern Producing Networks
+Notebook: https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/cppn.ipynb <br>
 Background: https://en.wikipedia.org/wiki/Compositional_pattern-producing_network

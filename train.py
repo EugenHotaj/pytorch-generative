@@ -10,15 +10,14 @@ from torch.optim import lr_scheduler
 from torchvision import datasets
 from torchvision import transforms
 
-from pytorch_generative import trainer
-from pytorch_generative import models
+import pytorch_generative as pg
 
 
 MODEL_MAP = {
-    'tiny_cnn': models.TinyCNN,
-    'nade': models.NADE,
-    'made': models.MADE,
-    'gated_pixel_cnn': models.GatedPixelCNN
+    'tiny_cnn': pg.models.TinyCNN,
+    'nade': pg.models.NADE,
+    'made': pg.models.MADE,
+    'gated_pixel_cnn': pg.models.GatedPixelCNN
 }
 
 
@@ -44,10 +43,10 @@ def main(args):
     x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))
     return criterion(preds, x).sum(dim=1).mean()
 
-  model_trainer = trainer.Trainer(
+  trainer = pg.trainer.Trainer(
       model, loss_fn, optimizer, train_loader, test_loader, 
-      lr_scheduler=scheduler, log_dir=args.log_dir)
-  model_trainer.interleaved_train_and_eval(n_epochs=args.n_epochs)
+      lr_scheduler=scheduler, log_dir=args.log_dir, save_checkpoint_epochs=1)
+  trainer.interleaved_train_and_eval(n_epochs=args.n_epochs)
 
 
 if __name__ == '__main__':

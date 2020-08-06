@@ -166,7 +166,7 @@ class Trainer:
           total_examples += n_examples
           total_loss += self._eval_one_batch(x, y) * n_examples
           eval_loss = total_loss / total_examples
-        # self._summary_writer.add_scalars('loss', {'eval': eval_loss}, self._step)
+        self._summary_writer.add_scalars('loss', {'eval': eval_loss}, self._step)
 
         self._epoch += 1
         self._save_checkpoint()

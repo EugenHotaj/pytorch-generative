@@ -16,6 +16,8 @@ with multiple channels, other methods can be used, e.g. [3].
 [3]: https://arxiv.org/abs/1701.05517
 """
 
+import torch
+from torch import distributions
 from torch import nn
 
 
@@ -132,7 +134,7 @@ class GatedPixelCNN(nn.Module):
 
   def __init__(self, 
                in_channels, 
-               out_dims=1,
+               out_dim=1,
                n_gated=10,
                gated_channels=128,
                head_channels=32):
@@ -140,7 +142,7 @@ class GatedPixelCNN(nn.Module):
     
     Args:
       in_channels: The number of channels in the input.
-      out_dims: The dimensionality of the output. Given input of the form
+      out_dim: The dimensionality of the output. Given input of the form
         (N, C, H, W), the output from the GatedPixelCNN model will be 
         (N, out_dim, C, H, W).
       n_gated: The number of gated layers (not including the input layers).
@@ -150,7 +152,7 @@ class GatedPixelCNN(nn.Module):
     """
 
     super().__init__()
-    self._out_dims = out_dims
+    self._out_dim = out_dim
     self._input = GatedPixelCNNLayer(
       in_channels=in_channels,
       out_channels=gated_channels,
@@ -170,7 +172,7 @@ class GatedPixelCNN(nn.Module):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=out_dim * in_channels,
+                  out_channels=self._out_dim * in_channels,
                   kernel_size=1),
         nn.Sigmoid())
 
@@ -180,10 +182,11 @@ class GatedPixelCNN(nn.Module):
     for gated_layer in self._gated_layers:
       vstack, hstack, skip = gated_layer(vstack, hstack)
       skip_connections += skip
-    out = self._head(skip_connections)
-    return out.view((n, self._out_dims, c, h, w))
+    return self._head(skip_connections).view((n, self._out_dim, c, h, w))
 
-
+  # TODO(eugenhotaj): We need to update the sampling code so it can handle 
+  # outputs with dim > 1. One thing that's unclear: should the sample method
+  # be part of the model?
   def sample(self, condition_on=None):
     """Samples a new image.
     
@@ -201,7 +204,6 @@ class GatedPixelCNN(nn.Module):
       else:
         conditioned_on = conditioned_on.clone()
 
-      # TODO(eugenhotaj): Remove hardcoding for MNIST sampling.
       for row in range(28):
         for column in range(28):
           for channel in range(1):

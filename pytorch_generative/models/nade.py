@@ -10,6 +10,7 @@ dimensionality of X. For the full details, see [1].
 """
 
 import torch
+from torch import distributions
 from torch import nn
 
 
@@ -71,7 +72,11 @@ class NADE(nn.Module):
 
   def forward(self, x):
     """Computes the forward pass."""
-    return self._forward(x)[0]
+    # If the input is an image, flatten it during the forward pass.
+    original_shape = x.shape
+    if len(x.shape) > 2:
+      x = x.view(original_shape[0], -1)
+    return self._forward(x)[0].view(original_shape)
 
   def sample(self, conditioned_on=None):
     """Samples a new image.

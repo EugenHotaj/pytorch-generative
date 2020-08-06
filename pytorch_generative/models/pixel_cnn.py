@@ -51,7 +51,7 @@ class MaskedConv2d(nn.Conv2d):
 
   def forward(self, x):
     self.weight.data *= self.mask
-    return super(MaskedConv2d, self).forward(x)
+    return super().forward(x)
     
     
 class MaskedResidualBlock(nn.Module):
@@ -91,7 +91,7 @@ class PixelCNN(nn.Module):
 
   def __init__(self, 
                in_channels, 
-               out_dims=1,
+               out_dim=1,
                n_residual=15,
                residual_channels=128, 
                head_channels=32):
@@ -100,7 +100,7 @@ class PixelCNN(nn.Module):
     Args:
       in_channels: The number of channels in the input image (typically either 
         1 or 3 for black and white or color images respectively).
-      out_dims: The dimension of the output. Given input of the form 
+      out_dim: The dimension of the output. Given input of the form 
         (N, C, H, W), the output from the model will be (N, out_dim, C, H, W).
       n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
@@ -108,6 +108,7 @@ class PixelCNN(nn.Module):
         layers at the head of the network.
     """
     super().__init__()
+    self._out_dim = out_dim
 
     self._input = MaskedConv2d(is_causal=True,
                                in_channels=in_channels,
@@ -116,7 +117,7 @@ class PixelCNN(nn.Module):
                                padding=3)
     self._masked_layers = nn.ModuleList([
         MaskedResidualBlock(n_channels=2*residual_channels) 
-        for _ in range(n_residual_blocks) 
+        for _ in range(n_residual) 
     ])
     self._head = nn.Sequential(
         nn.ReLU(),
@@ -125,17 +126,18 @@ class PixelCNN(nn.Module):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=in_channels, 
+                  out_channels=self._out_dim * in_channels, 
                   kernel_size=1),
         nn.Sigmoid())
 
   def forward(self, x):
+    n, c, h, w = x.shape
     x = self._input(x)
     skip = torch.zeros_like(x) + x
     for layer in self._masked_layers:
       x = layer(x)
       skip += x
-    return self._head(skip)
+    return self._head(skip).view((n, self._out_dim, c, h, w))
 
   # TODO(eugenhotaj): We need to update the sampling code so it can handle 
   # outputs with dim > 1. One thing that's unclear: should the sample method

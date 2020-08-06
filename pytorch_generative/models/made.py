@@ -12,6 +12,9 @@ feature and D is the dimensionality of X. For full details, see [1].
 [2]: https://arxiv.org/abs/1605.02226
 """
 
+import numpy as np
+import torch
+from torch import distributions
 from torch import nn
 
 
@@ -26,7 +29,8 @@ class MaskedLinear(nn.Linear):
     self.mask.data.copy_(mask)
 
   def forward(self, x):
-    return F.linear(x, self.weight * self.mask, self.bias)
+    self.weight.data *= self.mask
+    return super().forward(x)
 
 
 class MADE(nn.Module):
@@ -97,8 +101,12 @@ class MADE(nn.Module):
 
   def forward(self, x):
     """Computes a forward pass."""
+    # If the input is an image, flatten it during the forward pass.
+    original_shape = x.shape
+    if len(original_shape) > 2:
+      x = x.view(original_shape[0], -1)
     masks, _ = self._sample_masks()
-    return self._forward(x, masks)
+    return self._forward(x, masks).view(original_shape)
 
   def sample(self, conditioned_on=None):
     """Samples a new image.

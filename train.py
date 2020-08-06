@@ -17,6 +17,7 @@ MODEL_MAP = {
     'tiny_cnn': pg.models.TinyCNN,
     'nade': pg.models.NADE,
     'made': pg.models.MADE,
+    'pixel_cnn': pg.models.PixelCNN,
     'gated_pixel_cnn': pg.models.GatedPixelCNN
 }
 

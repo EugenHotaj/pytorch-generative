@@ -68,14 +68,17 @@ def load_image(path, size=None, remove_alpha_channel=True):
   return image
   
 
-def imshow(tensor, title=None, figsize=None):
+def imshow(batch, title=None, figsize=None):
   """Renders the given tensor as an image using Matplotlib.
 
   Args:
-    tensor: The tensor to render as an image.
+    batch: A batch of tensors to render as images. If the batch size > 1, the
+      tensors are flattened into a horizontal strip before being rendered.
     title: The title for the rendered image. Passed to Matplotlib.
     figsize: The size (in inches) for the image. Passed to Matplotlib.
   """
+  n, c, h, w = batch.shape
+  tensor = batch.permute(1, 2, 0, 3).reshape(c, h, -1)
   image = _IMAGE_UNLOADER(tensor)
 
   plt.figure(figsize=figsize)

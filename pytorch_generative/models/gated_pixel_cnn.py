@@ -2,7 +2,7 @@
 
 TODO(eugenhotaj): describe.
 
-We follow the implementaiton in [2] but use a casually masked GatedPixelCNNLayer
+We follow the implementation in [2] but use a casually masked GatedPixelCNNLayer
 for the input instead of a causally masked Conv2d layer. For efficiency, the 
 masked Nx1 and 1xN convolutions are implemented via unmasked (N//2+1)x1 and
 1x(N//2+1) convolutions with padding and cropping, as suggested in [1].
@@ -19,6 +19,8 @@ with multiple channels, other methods can be used, e.g. [3].
 import torch
 from torch import distributions
 from torch import nn
+
+import pytorch_generative.models import base
 
 
 class GatedActivation(nn.Module):
@@ -129,7 +131,7 @@ class GatedPixelCNNLayer(nn.Module):
     return vstack, hstack, skip
 
 
-class GatedPixelCNN(nn.Module):
+class GatedPixelCNN(base.AutoregressiveModel):
   """The Gated PixelCNN model."""
 
   def __init__(self, 
@@ -142,9 +144,8 @@ class GatedPixelCNN(nn.Module):
     
     Args:
       in_channels: The number of channels in the input.
-      out_dim: The dimensionality of the output. Given input of the form
-        (N, C, H, W), the output from the GatedPixelCNN model will be 
-        (N, out_dim, C, H, W).
+      out_dim: The dimension of the output. Given input of the form NCHW, the 
+        output from the GatedPixelCNN model will be N out_dim CHW.
       n_gated: The number of gated layers (not including the input layers).
       gated_channels: The number of channels to use in the gated layers.
       head_channels: The number of channels to use in the 1x1 convolution blocks
@@ -183,33 +184,3 @@ class GatedPixelCNN(nn.Module):
       vstack, hstack, skip = gated_layer(vstack, hstack)
       skip_connections += skip
     return self._head(skip_connections).view((n, self._out_dim, c, h, w))
-
-  # TODO(eugenhotaj): We need to update the sampling code so it can handle 
-  # outputs with dim > 1. One thing that's unclear: should the sample method
-  # be part of the model?
-  def sample(self, condition_on=None):
-    """Samples a new image.
-    
-    Args:
-      conditioned_on: An (optional) image to condition samples on. Only 
-        dimensions with values < 0 will be sampled. For example, if 
-        conditioned_on[i] = -1, then output[i] will be sampled conditioned on
-        dimensions j < i. If 'None', an unconditional sample will be generated.
-    """
-    with torch.no_grad():
-    
-      if conditioned_on is None:
-        device = next(self.parameters()).device
-        conditioned_on = (torch.ones((1, self._input_dim)) * - 1).to(device)
-      else:
-        conditioned_on = conditioned_on.clone()
-
-      for row in range(28):
-        for column in range(28):
-          for channel in range(1):
-            out = self.forward(conditioned_on).squeeze(dim=1)[:, channel, row, column]
-            out = distributions.Bernoulli(probs=out).sample()
-            conditioned_on[:, channel, row, column] = torch.where(
-                conditioned_on[:, channel, row, column] < 0, out, 
-                conditioned_on[:, channel, row, column])
-      return conditioned_on

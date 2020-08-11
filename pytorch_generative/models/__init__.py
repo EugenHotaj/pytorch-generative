@@ -3,6 +3,7 @@
 import torch
 from torch import nn
 
+from pytorch_generative.models import base
 from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
 from pytorch_generative.models.made import MADE
 from pytorch_generative.models.nade import NADE
@@ -11,7 +12,7 @@ from pytorch_generative.models.pixel_cnn import MaskedConv2d
 from pytorch_generative.models.pixel_cnn import PixelCNN
 
 
-class TinyCNN(nn.Module):
+class TinyCNN(base.AutoregressiveModel):
   """A small network used for sanity checks."""
 
   def __init__(self, n_channels):

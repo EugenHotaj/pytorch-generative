@@ -13,8 +13,10 @@ import torch
 from torch import distributions
 from torch import nn
 
+from pytorch_generative.models import base
 
-class NADE(nn.Module):
+
+class NADE(base.AutoregressiveModel):
   """The Neural Autoregressive Distribution Estimator (NADE) model."""
 
   def __init__(self, input_dim, hidden_dim):
@@ -44,6 +46,11 @@ class NADE(nn.Module):
       (p_hat, x_hat) where p_hat is the probability distribution over dimensions
       and x_hat is sampled from p_hat.
     """
+    # If the input is an image, flatten it during the forward pass.
+    original_shape = x.shape
+    if len(x.shape) > 2:
+      x = x.view(original_shape[0], -1)
+
     in_W, in_b = self.params['in_W'], self.params['in_b']
     h_W, h_b = self.params['h_W'], self.params['h_b']
     batch_size = 1 if x is None else x.shape[0] 
@@ -68,27 +75,20 @@ class NADE(nn.Module):
       # We do not need to add in_b[i:i+1] when computing the other hidden units
       # since it was already added when computing the first hidden unit. 
       a = a + x_i @ in_W[:, i:i+1].t()
-    return torch.cat(p_hat, dim=1), torch.cat(x_hat, dim=1) if x_hat else []
+    if x_hat:
+      return (torch.cat(p_hat, dim=1).view(original_shape), 
+              torch.cat(x_hat, dim=1).view(original_shape))
+    return []
 
   def forward(self, x):
     """Computes the forward pass."""
-    # If the input is an image, flatten it during the forward pass.
-    original_shape = x.shape
-    if len(x.shape) > 2:
-      x = x.view(original_shape[0], -1)
-    return self._forward(x)[0].view(original_shape)
+    return self._forward(x)[0]
 
-  def sample(self, conditioned_on=None):
-    """Samples a new image.
-    
-    Args:
-      conditioned_on: An (optional) image to condition samples on. Only 
-        dimensions with values < 0 will be sampled. For example, if 
-        conditioned_on[i] = -1, then output[i] will be sampled conditioned on
-        dimensions j < i. If 'None', an unconditional sample will be generated.
-    """
+  # TODO(eugenhotaj): It's kind of dumb to require an out_shape for 
+  # non-convolutional models. We already know what the out_shape should be based
+  # on the model parameters.
+  def sample(self, output_shape=None, conditioned_on=None):
+    """See the base class."""
     with torch.no_grad():
-      if conditioned_on is None:
-        device = next(self.parameters()).device
-        conditioned_on = (torch.ones((1, self._input_dim)) * -1).to(device)
+      conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
       return self._forward(conditioned_on)[1]

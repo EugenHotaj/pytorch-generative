@@ -17,6 +17,8 @@ import torch
 from torch import distributions
 from torch import nn
 
+from pytorch_generative.models import base
+
 
 class MaskedLinear(nn.Linear):
   """A Linear layer with masks that turn off some of the layer's weights."""
@@ -33,7 +35,7 @@ class MaskedLinear(nn.Linear):
     return super().forward(x)
 
 
-class MADE(nn.Module):
+class MADE(base.AutoregressiveModel):
   """The Masked Autoencoder Distribution Estimator (MADE) model."""
 
   def __init__(self, input_dim, hidden_dims=None, n_masks=1):
@@ -93,37 +95,29 @@ class MADE(nn.Module):
     return [torch.from_numpy(mask.astype(np.uint8)) for mask in masks], conn[-1]
 
   def _forward(self, x, masks): 
-    layers = [
-      layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)]
-    for layer, mask in zip(layers, masks):
-      layer.set_mask(mask)
-    return self._net(x)
-
-  def forward(self, x):
-    """Computes a forward pass."""
     # If the input is an image, flatten it during the forward pass.
     original_shape = x.shape
     if len(original_shape) > 2:
       x = x.view(original_shape[0], -1)
+
+    layers = [
+      layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)]
+    for layer, mask in zip(layers, masks):
+      layer.set_mask(mask)
+    return self._net(x).view(original_shape)
+
+  def forward(self, x):
+    """Computes a forward pass."""
     masks, _ = self._sample_masks()
-    return self._forward(x, masks).view(original_shape)
+    return self._forward(x, masks)
 
-  def sample(self, conditioned_on=None):
-    """Samples a new image.
-    
-    Args:
-      conditioned_on: An (optional) image to condition samples on. Only 
-        dimensions with values < 0 will be sampled. For example, if 
-        conditioned_on[i] = -1, then output[i] will be sampled conditioned on
-        dimensions j < i. If 'None', an unconditional sample will be generated.
-    """
+  # TODO(eugenhotaj): It's kind of dumb to require an out_shape for 
+  # non-convolutional models. We already know what the out_shape should be based
+  # on the model parameters.
+  def sample(self, out_shape=None, conditioned_on=None):
+    """See the base class."""
     with torch.no_grad():
-      if conditioned_on is None:
-        device = next(self.parameters()).device
-        conditioned_on = (torch.ones((1, self._input_dim)) * - 1).to(device)
-      else:
-        conditioned_on = conditioned_on.clone()
-
+      conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
       masks, ordering = self._sample_masks()
       ordering = np.argsort(ordering)
       for dim in ordering:
@@ -131,4 +125,4 @@ class MADE(nn.Module):
         out = distributions.Bernoulli(probs=out).sample()
         conditioned_on[:, dim] = torch.where(
             conditioned_on[:, dim] < 0, out, conditioned_on[:, dim])
-      return conditioned_on
+          return conditioned_on

@@ -1,29 +1,6 @@
 """Utilities for debugging models in PyTorch."""
 
 
-class OneBatchLoaderWrapper:
-  """A torch.utils.DataLoader wrapper which always returns the same batch."""
-
-  def __init__(self, loader):
-    """Initializes a new OneBatchLoaderWrapper instance.
-    
-    Args:
-      loader: The torch.utils.DataLoader to wrap.
-    """
-    self._exhausted = False
-    self._batch = next(iter(loader))
-
-  def __iter__(self):
-    self._exhausted = False
-    return self
-
-  def __next__(self):
-    if not self._exhausted:
-      self._exhausted = True
-      return self._batch
-    raise StopIteration() 
-
-
 class OneExampleLoaderWrapper:
   """A torch.utils.DataLoader wrapper which always returns the same example."""
 
@@ -39,7 +16,8 @@ class OneExampleLoaderWrapper:
     """
     self._exhausted = False
     batch = next(iter(loader))
-    self._example = [item[:1] for item in batch]
+    # TODO(eugenhotaj): Consider using an actual PyTorch dataset. 
+    self.dataset = [item[:1] for item in batch]
 
   def __iter__(self):
     self._exhausted = False
@@ -48,5 +26,29 @@ class OneExampleLoaderWrapper:
   def __next__(self):
     if not self._exhausted:
       self._exhausted = True
-      return self._example
+      return self.dataset
+    raise StopIteration() 
+
+
+class OneBatchLoaderWrapper:
+  """A torch.utils.DataLoader wrapper which always returns the same batch."""
+
+  def __init__(self, loader):
+    """Initializes a new OneBatchLoaderWrapper instance.
+    
+    Args:
+      loader: The torch.utils.DataLoader to wrap.
+    """
+    self._exhausted = False
+    # TODO(eugenhotaj): Consider using an actual PyTorch dataset. 
+    self.dataset = next(iter(loader))
+
+  def __iter__(self):
+    self._exhausted = False
+    return self
+
+  def __next__(self):
+    if not self._exhausted:
+      self._exhausted = True
+      return self.dataset
     raise StopIteration() 

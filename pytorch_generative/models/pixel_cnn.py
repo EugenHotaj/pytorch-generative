@@ -14,6 +14,8 @@ import torch
 from torch import distributions
 from torch import nn
 
+from pytorch_generative.models import base
+
 
 class MaskedConv2d(nn.Conv2d):
   """A Conv2d layer masked to respect the autoregressive property.
@@ -86,7 +88,7 @@ class MaskedResidualBlock(nn.Module):
     return x + self._net(x)
 
 
-class PixelCNN(nn.Module):
+class PixelCNN(base.AutoregressiveModel):
   """The PixelCNN model."""
 
   def __init__(self, 
@@ -100,8 +102,8 @@ class PixelCNN(nn.Module):
     Args:
       in_channels: The number of channels in the input image (typically either 
         1 or 3 for black and white or color images respectively).
-      out_dim: The dimension of the output. Given input of the form 
-        (N, C, H, W), the output from the model will be (N, out_dim, C, H, W).
+      out_dim: The dimension of the output. Given input of the form NCHW, the 
+        output from the model will be N out_dim CHW.
       n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
       head_channels: The number of channels to use in the two 1x1 convolutional
@@ -138,30 +140,3 @@ class PixelCNN(nn.Module):
       x = layer(x)
       skip += x
     return self._head(skip).view((n, self._out_dim, c, h, w))
-
-  # TODO(eugenhotaj): We need to update the sampling code so it can handle 
-  # outputs with dim > 1. One thing that's unclear: should the sample method
-  # be part of the model?
-  def sample(self):
-    """Samples a new image.
-    
-    Args:
-      conditioned_on: An (optional) image to condition samples on. Only 
-        dimensions with values < 0 will be sampled. For example, if 
-        conditioned_on[i] = -1, then output[i] will be sampled conditioned on
-        dimensions j < i. If 'None', an unconditional sample will be generated.
-    """
-    with torch.no_grad():
-      device = next(self.parameters()).device
-      conditioned_on = (torch.ones((1, 1,  28, 28)) * - 1).to(device)
-
-      for row in range(28):
-        for column in range(28):
-          for channel in range(1):
-            out = self.forward(conditioned_on)[:, channel, row, column]
-            out = distributions.Bernoulli(probs=out).sample()
-            conditioned_on[:, channel, row, column] = torch.where(
-                conditioned_on[:, channel, row, column] < 0,
-                out, 
-                conditioned_on[:, channel, row, column])
-      return conditioned_on

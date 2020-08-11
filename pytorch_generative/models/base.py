@@ -38,7 +38,7 @@ class AutoregressiveModel(nn.Module):
       n, c, h, w = conditioned_on.shape
       for row in range(h):
         for column in range(w):
-            out = model.forward(conditioned_on)[:, :, :, row, column]
+          out = model.forward(conditioned_on)[:, :, :, row, column]
           distribution = (distributions.Categorical if out.shape[1] > 1 
                           else distributions.Bernoulli)
           out = distribution(probs=out).sample().view(n, c, 1)

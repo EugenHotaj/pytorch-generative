@@ -1,3 +1,6 @@
+# MacOS Related
+.DS_Store
+
 # Vim related
 *.un~
 *.swp

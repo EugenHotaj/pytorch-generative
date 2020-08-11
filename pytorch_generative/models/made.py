@@ -125,4 +125,4 @@ class MADE(base.AutoregressiveModel):
         out = distributions.Bernoulli(probs=out).sample()
         conditioned_on[:, dim] = torch.where(
             conditioned_on[:, dim] < 0, out, conditioned_on[:, dim])
-          return conditioned_on
+      return conditioned_on

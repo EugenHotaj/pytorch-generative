@@ -20,7 +20,7 @@ import torch
 from torch import distributions
 from torch import nn
 
-import pytorch_generative.models import base
+from pytorch_generative.models import base
 
 
 class GatedActivation(nn.Module):

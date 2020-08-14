@@ -41,11 +41,7 @@ class MaskedConv2d(nn.Conv2d):
       is_causal: Whether the convolution should be causally masked.
     """
     super().__init__(*args, **kwargs)
-
     i, o, h, w = self.weight.shape
-
-    assert h % 2 == 1, 'kernel_size cannot be even'
-    
     mask = torch.zeros((i, o, h, w))
     mask.data[:, :, :h//2, :] = 1
     mask.data[:, :, h//2, :w//2 + int(not is_causal)] = 1

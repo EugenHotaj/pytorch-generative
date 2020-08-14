@@ -1,5 +1,26 @@
 """Utilities for debugging models in PyTorch."""
 
+import torch
+
+
+def compute_receptive_field(model, img_size=(1, 3,  3)):
+  """Computes the receptive field for a model.
+
+  The receptive field is computed using the magnitude of the gradient of the
+  model's output with respect to the input.
+
+  Args:
+    model: Model for hich to compute the receptive field. Assumes NCHW input.
+    img_size: The (channels, height, width) of the input to the model.
+  """
+  c, h, w = img_size
+  img = torch.randn((1, c, h, w), requires_grad=True)
+  img_hat = model(img)
+  img_hat[0, 0, h//2, w//2].mean().backward()
+  grad = img.grad.abs()[0, 0, :, :]
+  return torch.where(
+      grad > 0, torch.ones_like(grad), torch.zeros_like(grad)
+
 
 class OneExampleLoaderWrapper:
   """A torch.utils.DataLoader wrapper which always returns the same example."""

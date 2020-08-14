@@ -14,44 +14,10 @@ import torch
 from torch import distributions
 from torch import nn
 
+from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
 
-
-class MaskedConv2d(nn.Conv2d):
-  """A Conv2d layer masked to respect the autoregressive property.
-
-  Autoregressive masking means that the computation of the current pixel only
-  depends on itself, pixels to the left, and pixels above. When the convolution
-  is causally masked (i.e. 'is_causal=True'), the computation of the current 
-  pixel does not depend on itself.
-
-  E.g. for a 3x3 kernel, the following masks are generated for each channel:
-                      [[1 1 1],                   [[1 1 1]
-      is_causal=False  [1 1 0],    is_causal=True  [1 0 0]
-                       [0 0 0]]                    [0 0 0]
-  In [1], they refer to the left masks as 'type A' and right as 'type B'. 
-
-  N.B.: This layer does *not* implement autoregressive channel masking.
-  """
-
-  def __init__(self, is_causal, *args, **kwargs):
-    """Initializes a new MaskedConv2d instance.
-    
-    Args:
-      is_causal: Whether the convolution should be causally masked.
-    """
-    super().__init__(*args, **kwargs)
-    i, o, h, w = self.weight.shape
-    mask = torch.zeros((i, o, h, w))
-    mask.data[:, :, :h//2, :] = 1
-    mask.data[:, :, h//2, :w//2 + int(not is_causal)] = 1
-    self.register_buffer('mask', mask)
-
-  def forward(self, x):
-    self.weight.data *= self.mask
-    return super().forward(x)
-    
-    
+ 
 class MaskedResidualBlock(nn.Module):
   """A residual block masked to respect the autoregressive property."""
   
@@ -69,11 +35,11 @@ class MaskedResidualBlock(nn.Module):
                   out_channels=n_channels//2, 
                   kernel_size=1),
         nn.ReLU(),
-        MaskedConv2d(is_causal=False,
-                     in_channels=n_channels//2,
-                     out_channels=n_channels//2,
-                     kernel_size=3,
-                     padding=1),
+        pg_nn.MaskedConv2d(is_causal=False,
+                           in_channels=n_channels//2,
+                           out_channels=n_channels//2,
+                           kernel_size=3,
+                           padding=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=n_channels//2, 
                   out_channels=n_channels,
@@ -108,11 +74,11 @@ class PixelCNN(base.AutoregressiveModel):
     super().__init__()
     self._out_dim = out_dim
 
-    self._input = MaskedConv2d(is_causal=True,
-                               in_channels=in_channels,
-                               out_channels=2*residual_channels, 
-                               kernel_size=7, 
-                               padding=3)
+    self._input = pg_nn MaskedConv2d(is_causal=True,
+                                     in_channels=in_channels,
+                                     out_channels=2*residual_channels, 
+                                     kernel_size=7, 
+                                     padding=3)
     self._masked_layers = nn.ModuleList([
         MaskedResidualBlock(n_channels=2*residual_channels) 
         for _ in range(n_residual) 

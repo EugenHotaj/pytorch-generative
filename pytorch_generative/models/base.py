@@ -16,6 +16,7 @@ class AutoregressiveModel(nn.Module):
       conditioned_on = (torch.ones(out_shape) * - 1).to(device)
     else:
       conditioned_on = conditioned_on.clone()
+    return conditioned_on
 
   # TODO(eugenhotaj): It may be possible to support more complex output 
   # distributions by allowing the user to specify a sampling_fn.

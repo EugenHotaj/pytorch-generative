@@ -74,7 +74,7 @@ class PixelCNN(base.AutoregressiveModel):
     super().__init__()
     self._out_dim = out_dim
 
-    self._input = pg_nn MaskedConv2d(is_causal=True,
+    self._input = pg_nn.MaskedConv2d(is_causal=True,
                                      in_channels=in_channels,
                                      out_channels=2*residual_channels, 
                                      kernel_size=7, 

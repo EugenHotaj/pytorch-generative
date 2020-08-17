@@ -3,22 +3,21 @@
 import torch
 from torch import nn
 
+from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
 from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
 from pytorch_generative.models.made import MADE
 from pytorch_generative.models.nade import NADE
-# TODO(eugenhotaj): Move MaskedConv2d into a layers module.
-from pytorch_generative.models.pixel_cnn import MaskedConv2d
 from pytorch_generative.models.pixel_cnn import PixelCNN
 
 
 class TinyCNN(base.AutoregressiveModel):
   """A small network used for sanity checks."""
 
-  def __init__(self, n_channels):
+  def __init__(self, in_channels):
       super().__init__()
-      self._conv = MaskedConv2d(
-          is_causal=True, in_channels=n_channels, out_channels=n_channels, 
+      self._conv = pg_nn.MaskedConv2d(
+          is_causal=True, in_channels=in_channels, out_channels=in_channels, 
           kernel_size=3, padding=1)
 
   def forward(self, x):

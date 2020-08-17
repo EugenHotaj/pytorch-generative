@@ -34,7 +34,7 @@ def main(args):
           datasets.MNIST('./data', train=False, download=True, transform=transform),
           batch_size=args.batch_size)
 
-  model = MODEL_MAP[args.model](n_channels=1)
+  model = MODEL_MAP[args.model](in_channels=1)
   optimizer = optim.Adam(model.parameters())
   scheduler = lr_scheduler.MultiplicativeLR(optimizer, lambda _: 0.9984)
 

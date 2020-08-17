@@ -15,8 +15,8 @@ from torch import nn
 def image_positional_encoding(shape):
   """Generates positional encodings for 2d images.
 
-  The positional encodings are a tensor of shape (N, 2, H, W) of the (x, y) 
-  pixel coordinates scaled to be between -.5 and .5. 
+  The positional encoding is a Tensor of shape (N, 2, H, W) of (x, y) pixel 
+  coordinates scaled to be between -.5 and .5. 
 
   Args: 
     shape: NCHW shape of image for which to generate positional encodings.
@@ -29,6 +29,28 @@ def image_positional_encoding(shape):
     (torch.arange(-.5, .5, 1 / h)[None, None, :, None] + zeros),
     (torch.arange(-.5, .5, 1 / w)[None, None, None, :] + zeros)),
     dim=1)
+
+
+class GatedActivation(nn.Module):
+  """Activation function which computes actiation_fn(f) * sigmoid(g).
+  
+  The f and g correspond to the top 1/2 and bottom 1/2 of the input channels.
+  """
+
+  def __init__(self, activation_fn=torch.tanh):
+    """Initializes a new GatedActivation instance.
+
+    Args:
+      activation_fn: Activation to use for the top 1/2 input channels.
+    """
+    super().__init__()
+    self._activation_fn = activation_fn
+
+  def forward(self, x):
+    _, c, _, _ = x.shape
+    assert c % 2 == 0, 'x must have an even number of channels.'
+    x, gate = x[:, :c//2, :, :], x[:, c//2:, :, :]
+    return self._activation_fn(x) * torch.sigmoid(gate)
 
 
 class MaskedConv2d(nn.Conv2d):
@@ -69,7 +91,7 @@ class MaskedConv2d(nn.Conv2d):
 @functools.lru_cache(maxsize=32)
 def _get_causal_mask(size, is_causal=False):
   """Generates causal masks for attention weights."""
-  return torch.tril(torch.ones((size, size), diagonal=-int(is_causal))
+  return torch.tril(torch.ones((size, size), diagonal=-int(is_causal)))
 
 
 class MaskedAttention(nn.Module):
@@ -121,7 +143,7 @@ class MaskedAttention(nn.Module):
       kv_extra_channels: Extra channels concatenated with x which are only
         used as input to the key and value convolutions.
     Returns:
-      The Module's output.
+      The result of the forward pass.
     """
     n, _, h, w = x.shape 
 

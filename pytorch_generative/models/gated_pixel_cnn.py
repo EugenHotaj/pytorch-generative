@@ -11,30 +11,18 @@ NOTE: Our implementaiton does *not* use autoregressive channel masking. This
 means that each output depends on whole pixels and not sub-pixels. For outputs
 with multiple channels, other methods can be used, e.g. [3]. 
 
-[1]: https://arxiv.org/abs/1606.05328
-[2]: http://www.scottreed.info/files/iclr2017.pdf
-[3]: https://arxiv.org/abs/1701.05517
+References (used throughout the code):
+  [1]: https://arxiv.org/abs/1606.05328
+  [2]: http://www.scottreed.info/files/iclr2017.pdf
+  [3]: https://arxiv.org/abs/1701.05517
 """
 
 import torch
 from torch import distributions
 from torch import nn
 
+from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
-
-
-class GatedActivation(nn.Module):
-  """A function which computes 'tanh(f) * sigmoid(g)'.
-  
-  Here 'f' and 'g' correspond to the top 1/2 and bottom 1/2 of the channels of
-  some input image.
-  """
-
-  def forward(self, x):
-    _, c, _, _ = x.shape
-    assert c % 2 == 0, 'x must have an even number of channels.'
-    tanh, sigmoid = x[:, :c//2, :, :], x[:, c//2:, :, :]
-    return torch.tanh(tanh) * torch.sigmoid(sigmoid)
 
 
 class GatedPixelCNNLayer(nn.Module):
@@ -65,7 +53,7 @@ class GatedPixelCNNLayer(nn.Module):
 
     self._in_channels = in_channels
     self._out_channels = out_channels
-    self._activation = GatedActivation()
+    self._activation = pg_nn.GatedActivation()
     self._kernel_size = kernel_size
     self._padding = (kernel_size - 1) // 2  # (kernel_size - stride) / 2
     self._is_causal = is_causal

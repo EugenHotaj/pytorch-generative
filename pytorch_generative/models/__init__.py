@@ -9,6 +9,7 @@ from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
 from pytorch_generative.models.made import MADE
 from pytorch_generative.models.nade import NADE
 from pytorch_generative.models.pixel_cnn import PixelCNN
+from pytorch_generative.models.pixel_snail import PixelSNAIL
 
 
 class TinyCNN(base.AutoregressiveModel):
@@ -24,4 +25,4 @@ class TinyCNN(base.AutoregressiveModel):
     return torch.sigmoid(self._conv(x))
 
 
-__all__ = ['GatedPixelCNN', 'MADE', 'NADE', 'PixelCNN', 'TinyCNN']
+__all__ = ['GatedPixelCNN', 'MADE', 'NADE', 'PixelCNN', 'PixelSNAIL', 'TinyCNN']

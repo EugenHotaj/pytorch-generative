@@ -14,11 +14,12 @@ import pytorch_generative as pg
 
 
 MODEL_MAP = {
-    'tiny_cnn': pg.models.TinyCNN,
-    'nade': pg.models.NADE,
+    'gated_pixel_cnn': pg.models.GatedPixelCNN,
     'made': pg.models.MADE,
+    'nade': pg.models.NADE,
     'pixel_cnn': pg.models.PixelCNN,
-    'gated_pixel_cnn': pg.models.GatedPixelCNN
+    'pixel_snail': pg.models.PixelSNAIL,
+    'tiny_cnn': pg.models.TinyCNN,
 }
 
 

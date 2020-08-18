@@ -7,15 +7,16 @@ References (used throughout the code):
 
 import functools
 
+import numpy as np
 import torch
 from torch import nn
 
 
 @functools.lru_cache(maxsize=32)
 def image_positional_encoding(shape):
-  """Generates positional encodings for 2d images.
+  """Generates *per-channel* positional encodings for 2d images.
 
-  The positional encoding is a Tensor of shape (N, 2, H, W) of (x, y) pixel 
+  The positional encoding is a Tensor of shape (N, 2*C, H, W) of (x, y) pixel 
   coordinates scaled to be between -.5 and .5. 
 
   Args: 
@@ -91,7 +92,7 @@ class MaskedConv2d(nn.Conv2d):
 @functools.lru_cache(maxsize=32)
 def _get_causal_mask(size, is_causal=False):
   """Generates causal masks for attention weights."""
-  return torch.tril(torch.ones((size, size), diagonal=-int(is_causal)))
+  return torch.tril(torch.ones((size, size)), diagonal=-int(is_causal))
 
 
 class MaskedAttention(nn.Module):
@@ -155,6 +156,8 @@ class MaskedAttention(nn.Module):
     key = kv[:, :self._key_channels, :, :].view(n, self._key_channels, -1)
     value = kv[:, self._key_channels:, :, :].view(n, self._value_channels, -1)
 
+    # TODO(eugenhotaj): Do we even need the stable softmax here? Will 
+    # torch.softmax work just as well?
     # Compute the causual attention weights using stable softmax.
     mask = _get_causal_mask(h * w).to(next(self.parameters()).device)
     probs = (query.permute(0, 2, 1) @ key) - (1. - mask) * 1e10

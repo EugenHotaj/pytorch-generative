@@ -15,14 +15,19 @@ from pytorch_generative.models.pixel_snail import PixelSNAIL
 class TinyCNN(base.AutoregressiveModel):
   """A small network used for sanity checks."""
 
-  def __init__(self, in_channels):
+  def __init__(self, in_channels, out_dim=1):
       super().__init__()
+      self._out_dim = out_dim
       self._conv = pg_nn.MaskedConv2d(
-          is_causal=True, in_channels=in_channels, out_channels=in_channels, 
-          kernel_size=3, padding=1)
+          is_causal=True, 
+          in_channels=in_channels,
+          out_channels=out_dim * in_channels, 
+          kernel_size=3, 
+          padding=1)
 
   def forward(self, x):
-    return torch.sigmoid(self._conv(x))
+    n, c, h, w = x.shape
+    return torch.sigmoid(self._conv(x)).view(n, self._out_dim, c, h, w)
 
 
 __all__ = ['GatedPixelCNN', 'MADE', 'NADE', 'PixelCNN', 'PixelSNAIL', 'TinyCNN']

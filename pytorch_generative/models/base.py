@@ -20,6 +20,7 @@ class AutoregressiveModel(nn.Module):
 
   # TODO(eugenhotaj): It may be possible to support more complex output 
   # distributions by allowing the user to specify a sampling_fn.
+  # TODO(eugenhotaj): This function does not handle subpixel sampling correctly.
   def sample(self, out_shape=None, conditioned_on=None):
     """Generates new samples from the model.
 
@@ -39,10 +40,10 @@ class AutoregressiveModel(nn.Module):
       n, c, h, w = conditioned_on.shape
       for row in range(h):
         for column in range(w):
-          out = model.forward(conditioned_on)[:, :, :, row, column]
+          out = self.forward(conditioned_on)[:, :, :, row, column]
           distribution = (distributions.Categorical if out.shape[1] > 1 
                           else distributions.Bernoulli)
-          out = distribution(probs=out).sample().view(n, c, 1)
+          out = distribution(probs=out).sample().view(n, c)
           conditioned_on[:, :, row, column] = torch.where(
               conditioned_on[:, :, row, column] < 0,
               out, 

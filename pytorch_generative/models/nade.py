@@ -87,7 +87,7 @@ class NADE(base.AutoregressiveModel):
   # TODO(eugenhotaj): It's kind of dumb to require an out_shape for 
   # non-convolutional models. We already know what the out_shape should be based
   # on the model parameters.
-  def sample(self, output_shape=None, conditioned_on=None):
+  def sample(self, out_shape=None, conditioned_on=None):
     """See the base class."""
     with torch.no_grad():
       conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)

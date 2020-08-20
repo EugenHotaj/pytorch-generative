@@ -8,6 +8,19 @@ from torch import nn
 class AutoregressiveModel(nn.Module):
   """The base class for Autoregressive generative models. """
 
+  def __init__(self, probs_fn, sample_fn):
+    """Initializes a new AutoregressiveModel instance.
+
+    Args:
+      probs_fn: A function which takes as input the model's logits and returns
+        probabilities.
+      sample_fn: A function which takes as input sufficient statistics of some
+        distribution and returns a sample from that distribution.
+    """
+    super().__init__()
+    self._probs_fn = probs_fn
+    self._sample_fn = sample_fn
+
   def _get_conditioned_on(self, out_shape, conditioned_on):
     assert out_shape is None or conditioned_on is None, \
       'Must provided one, and only one of "out_shape" or "conditioned_on"'
@@ -18,8 +31,6 @@ class AutoregressiveModel(nn.Module):
       conditioned_on = conditioned_on.clone()
     return conditioned_on
 
-  # TODO(eugenhotaj): It may be possible to support more complex output 
-  # distributions by allowing the user to specify a sampling_fn.
   # TODO(eugenhotaj): This function does not handle subpixel sampling correctly.
   def sample(self, out_shape=None, conditioned_on=None):
     """Generates new samples from the model.
@@ -31,6 +42,7 @@ class AutoregressiveModel(nn.Module):
       out_shape: The expected shape of the sampled output in NCHW format. 
         Should only be provided when 'conditioned_on=None'.
       conditioned_on: A batch of partial samples to condition the generation on.
+          out = distribution(probs=out).sample().view(n, c)
         Only dimensions with values < 0 will be sampled while dimensions with 
         values >= 0 will be left unchanged. If 'None', an unconditional sample
         will be generated.
@@ -39,13 +51,11 @@ class AutoregressiveModel(nn.Module):
       conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
       n, c, h, w = conditioned_on.shape
       for row in range(h):
-        for column in range(w):
-          out = self.forward(conditioned_on)[:, :, :, row, column]
-          distribution = (distributions.Categorical if out.shape[1] > 1 
-                          else distributions.Bernoulli)
-          out = distribution(probs=out).sample().view(n, c)
-          conditioned_on[:, :, row, column] = torch.where(
-              conditioned_on[:, :, row, column] < 0,
+        for col in range(w):
+          out = self.forward(conditioned_on)[:, :, :, row, col]
+          out = self._sample_fn(out).view(n, c)
+          conditioned_on[:, :, row, col] = torch.where(
+              conditioned_on[:, :, row, col] < 0,
               out, 
-              conditioned_on[:, :, row, column])
+              conditioned_on[:, :, row, col])
       return conditioned_on

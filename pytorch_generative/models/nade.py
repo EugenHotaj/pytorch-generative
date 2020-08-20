@@ -27,7 +27,7 @@ class NADE(base.AutoregressiveModel):
       hidden_dim: The dimmension of the hidden layer. NADE only supports one
         hidden layer.
     """
-    super().__init__()
+    super().__init__(probs_fn=None, sample_fn=None)
     self._input_dim = input_dim
     self._hidden_dim = hidden_dim
     self.params = nn.ParameterDict({
@@ -81,12 +81,19 @@ class NADE(base.AutoregressiveModel):
     return []
 
   def forward(self, x):
-    """Computes the forward pass."""
+    """Computes the forward pass.
+
+    Args:
+      x: Either a tensor of vectors with shape (n, input_dim) or images with
+        shape (n, 1, h, w) where h * w = input_dim.
+    Returns:
+      The result of the forward pass.
+    """
     return self._forward(x)[0]
 
   # TODO(eugenhotaj): It's kind of dumb to require an out_shape for 
   # non-convolutional models. We already know what the out_shape should be based
-  # on the model parameters.
+  # on the model parameters.orks
   def sample(self, out_shape=None, conditioned_on=None):
     """See the base class."""
     with torch.no_grad():

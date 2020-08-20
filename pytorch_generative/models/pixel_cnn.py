@@ -54,8 +54,10 @@ class PixelCNN(base.AutoregressiveModel):
   """The PixelCNN model."""
 
   def __init__(self, 
-               in_channels, 
+               in_channels=1, 
                out_dim=1,
+               probs_fn=torch.sigmoid,
+               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_residual=15,
                residual_channels=128, 
                head_channels=32):
@@ -66,12 +68,14 @@ class PixelCNN(base.AutoregressiveModel):
         1 or 3 for black and white or color images respectively).
       out_dim: The dimension of the output. Given input of the form NCHW, the 
         output from the model will be N out_dim CHW.
+      probs_fn: See the base class.
+      sample_fn: See the base class.
       n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
       head_channels: The number of channels to use in the two 1x1 convolutional
         layers at the head of the network.
     """
-    super().__init__()
+    super().__init__(probs_fn, sample_fn)
     self._out_dim = out_dim
 
     self._input = pg_nn.MaskedConv2d(is_causal=True,
@@ -91,8 +95,7 @@ class PixelCNN(base.AutoregressiveModel):
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
                   out_channels=self._out_dim * in_channels, 
-                  kernel_size=1),
-        nn.Sigmoid())
+                  kernel_size=1))
 
   def forward(self, x):
     n, c, h, w = x.shape
@@ -101,4 +104,5 @@ class PixelCNN(base.AutoregressiveModel):
     for layer in self._masked_layers:
       x = layer(x)
       skip += x
-    return self._head(skip).view((n, self._out_dim, c, h, w))
+    out = self._head(skip).view((n, self._out_dim, c, h, w))
+    return self._probs_fn(out)

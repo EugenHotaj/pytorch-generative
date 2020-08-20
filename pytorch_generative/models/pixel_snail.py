@@ -18,6 +18,7 @@ References (used throughout the code):
 """
 
 import torch
+from torch import distributions
 from torch import nn
 from torch.nn import functional as F
 
@@ -124,6 +125,8 @@ class PixelSNAIL(base.AutoregressiveModel):
   def __init__(self, 
                in_channels=1, 
                out_dim=1,
+               probs_fn=torch.sigmoid,
+               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_channels=64,
                n_pixel_snail_blocks=8,
                n_residual_blocks=2,
@@ -137,6 +140,8 @@ class PixelSNAIL(base.AutoregressiveModel):
         1 or 3 for black and white or color images respectively).
       out_dim: The dimension of the output. Given input of the form NCHW, the 
         output from the model will be N out_dim CHW.
+      probs_fn: See the base class.
+      sample_fn: See the base class.
       n_channels: The number of channels to use for convolutions.
       n_pixel_snail_blocks: The number of PixelSNAILBlocks. 
       n_residual_blocks: The number of ResidualBlock to use in each 
@@ -147,7 +152,7 @@ class PixelSNAIL(base.AutoregressiveModel):
         value.
 
     """
-    super().__init__()
+    super().__init__(probs_fn, sample_fn)
     self._out_dim = out_dim
     
     self._input = pg_nn.MaskedConv2d(is_causal=True, 
@@ -178,4 +183,5 @@ class PixelSNAIL(base.AutoregressiveModel):
     for block in self._pixel_snail_blocks:
       x = block(skip, input_img)
       skip += x
-    return torch.sigmoid(self._output(skip)).view(n, self._out_dim, c, h, w)
+    out = self._output(skip).view(n, self._out_dim, c, h, w)
+    return self._probs_fn(out)

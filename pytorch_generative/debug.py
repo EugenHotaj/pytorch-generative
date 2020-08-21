@@ -19,7 +19,7 @@ def compute_receptive_field(model, img_size=(1, 3,  3)):
   img_hat[0, 0, h//2, w//2].mean().backward()
   grad = img.grad.abs()[0, 0, :, :]
   return torch.where(
-      grad > 0, torch.ones_like(grad), torch.zeros_like(grad)
+      grad > 0, torch.ones_like(grad), torch.zeros_like(grad))
 
 
 class OneExampleLoaderWrapper:

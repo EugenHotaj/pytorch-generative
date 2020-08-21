@@ -1,4 +1,7 @@
+from pytorch_generative import datasets
+from pytorch_generative import debug
 from pytorch_generative import models
+from pytorch_generative import nn
 from pytorch_generative import trainer
 
 __all__ = [ 'models', 'trainer']

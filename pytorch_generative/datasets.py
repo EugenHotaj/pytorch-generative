@@ -49,7 +49,6 @@ class BinarizedMNIST(vision.VisionDataset):
       self.download()
     data_file = self.train_file if self.train else self.test_file
     self.data = torch.load(os.path.join(self._folder, data_file))
-    self.targets = None
 
   def __getitem__(self, index):
     """Returns the tuple (img, None) with the given index."""
@@ -58,7 +57,7 @@ class BinarizedMNIST(vision.VisionDataset):
     img = PIL.Image.fromarray(img.numpy(), mode='L')
     if self.transform is not None:
       img = self.transform(img)
-    return img, None
+    return img
 
   def __len__(self):
     return len(self.data)

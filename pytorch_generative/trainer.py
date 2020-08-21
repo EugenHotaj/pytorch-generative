@@ -70,7 +70,9 @@ class Trainer:
 
       torch.save(self._model.state_dict(), self._path('model_state'))
       torch.save(self._optimizer.state_dict(), self._path('optimizer_state'))
-      torch.save(self._lr_scheduler.state_dict(), self._path('lr_scheduler_state'))
+      if self._lr_scheduler is not None:
+        torch.save(self._lr_scheduler.state_dict(), 
+                   self._path('lr_scheduler_state'))
       # TODO(eugenhotaj): Instead of saving these internal counters one at a 
       # time, maybe we can save them as a dictionary.
       torch.save(self._step, self._path('step'))
@@ -82,7 +84,9 @@ class Trainer:
       """Attempts to load Trainer state from the internal log_dir."""
       self._model.load_state_dict(torch.load(self._path('model_state')))
       self._optimizer.load_state_dict(torch.load(self._path('optimizer_state')))
-      self._lr_scheduler.load_state_dict(torch.load(self._path('lr_scheduler_state')))
+      if self._lr_scheduler is not None:
+        self._lr_scheduler.load_state_dict(
+            torch.load(self._path('lr_scheduler_state')))
       self._step = torch.load(self._path('step'))
       self._epoch = torch.load(self._path('epoch'))
       self._examples_processed = torch.load(self._path('examples_processed'))
@@ -104,7 +108,9 @@ class Trainer:
 
     def _train_one_batch(self, x, y):
       self._model.train()
-      x, y = x.to(self._device), y.to(self._device)
+      x = x.to(self._device)
+      if y is not None:
+        y = y.to(self._device)
       self._optimizer.zero_grad()
       loss = self.train_one_batch(x, y)
       loss.backward()
@@ -122,7 +128,9 @@ class Trainer:
     def _eval_one_batch(self, x, y):
       with torch.no_grad():
         self._model.eval()
-        x, y = x.to(self._device), y.to(self._device)
+        x = x.to(self._device)
+        if y is not None:
+          y = y.to(self._device)
         loss = self.eval_one_batch(x, y)
         return loss.item()
 
@@ -133,7 +141,9 @@ class Trainer:
         start_time = time.time()
 
         # Train.
-        for i, (x, y), in enumerate(self._train_loader):
+        for i, batch in enumerate(self._train_loader):
+          batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
+          x, y = batch
           self._examples_processed += x.shape[0]
           lrs = {
               f'group_{i}': param['lr'] 
@@ -161,7 +171,9 @@ class Trainer:
         # Evaluate
         self._model.eval()
         total_examples, total_loss = 0, 0.
-        for x, y, in self._eval_loader:
+        for batch in self._eval_loader:
+          batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
+          x, y = batch
           n_examples = x.shape[0]
           total_examples += n_examples
           total_loss += self._eval_one_batch(x, y) * n_examples

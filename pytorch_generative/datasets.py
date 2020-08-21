@@ -30,25 +30,26 @@ class BinarizedMNIST(vision.VisionDataset):
           'binarized_mnist_')
   resources = [_URL + "train.amat", _URL + "valid.amat", _URL + "test.amat"]
   train_file = 'train.pt'
+  valid_file = 'valid.pt'
   test_file = 'test.pt'
 
-  def __init__(self, root, train=True, transform=None):
+  def __init__(self, root, split='train', transform=None):
     """Initializes a new BinarizedMNIST instance.
     
     Args:
       root: The directory containing the data. If the data does not exist, it
         will be download to this directory.
-      train: Whether this Dataset contains the train split (or test split).
+      split: Which split to use. Must be one of 'train', 'valid', or 'test'.
       transform: A torchvision.transform to apply to the data.
     """
     super().__init__(root, transform=transform)
+    assert split in ('train', 'valid', 'test')
     self._raw_folder = os.path.join(self.root, 'BinarizedMNIST', 'raw')
     self._folder = os.path.join(self.root, 'BinarizedMNIST')
     self.train = train
     if not self._check_exists():
       self.download()
-    data_file = self.train_file if self.train else self.test_file
-    self.data = torch.load(os.path.join(self._folder, data_file))
+    self.data = torch.load(os.path.join(self._folder, split + '.pt'))
 
   def __getitem__(self, index):
     """Returns the tuple (img, None) with the given index."""
@@ -82,15 +83,16 @@ class BinarizedMNIST(vision.VisionDataset):
     shape = 28, 28
     train_set = _read_image_file(
         os.path.join(self._raw_folder, 'binarized_mnist_train.amat'), shape)
+    with open(os.path.join(self._folder, self.train_file), 'wb') as f:
+      torch.save(train_set, f)
     valid_set = _read_image_file(
         os.path.join(self._raw_folder, 'binarized_mnist_valid.amat'), shape)
-    full_set = torch.cat((train_set, valid_set), dim=0)
-    with open(os.path.join(self._folder, self.train_file), 'wb') as f:
-      torch.save(full_set, f)
+    with open(os.path.join(self._folder, self.valid_file), 'wb') as f:
+      torch.save(valid_set, f)
     test_set = _read_image_file(
         os.path.join(self._raw_folder, 'binarized_mnist_test.amat'), shape)
     with open(os.path.join(self._folder, self.test_file), 'wb') as f:
-      torch.save(train_set, f)
+      torch.save(test_set, f)
 
   def extra_repr(self):
     return "Split: {}".format("Train" if self.train else "Test")

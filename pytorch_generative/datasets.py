@@ -13,7 +13,7 @@ from torchvision.datasets import vision
 
 def _read_image_file(path, shape):
   with open(path, 'rb') as f:
-    images = np.loadtxt(f, delimiter=" ", dtype=np.uint8)
+    images = np.loadtxt(f, delimiter=" ", dtype=np.uint8) * 255
   return torch.from_numpy(images).view(-1, *shape)
 
 

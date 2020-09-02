@@ -135,7 +135,7 @@ class MaskedAttention(nn.Module):
     self._kv = nn.Conv2d(in_channels=in_channels + extra_input_channels,
                          out_channels=embed_channels + out_channels, 
                          kernel_size=1)
- 
+
   def forward(self, x, extra_x=None):
     """Computes the forward pass.
 
@@ -146,24 +146,28 @@ class MaskedAttention(nn.Module):
     Returns:
       The result of the forward pass.
     """
+
+    def _to_multihead(t):
+      """Reshapes an (N, C, H, W) tensor into (N, n_heads, H * W, head_size)."""
+      c = t.shape[1]
+      t = t.view(n, self._n_heads, c // self._n_heads, -1)
+      return t.transpose(2, 3)
+
     n, _, h, w = x.shape 
 
     # Compute the q[uery], k[ey], and v[alue].
-    q = self._query(x).view(n, self._embed_channels, -1)
+    q = _to_multihead(self._query(x))
     if extra_x is not None:
       x = torch.cat((x, extra_x), dim=1)
     kv = self._kv(x)
-    k = kv[:, :self._embed_channels, :, :].view(n, self._embed_channels, -1)
-    v = kv[:, self._embed_channels:, :, :].view(n, self._out_channels, -1)
+    k = _to_multihead(kv[:, :self._embed_channels, :, :])
+    v = _to_multihead(kv[:, self._embed_channels:, :, :])
 
-    # Transpose q, k, v, to be in 'channels last' format as this is more common
-    # in the literature and other libraries.
-    q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
-
-    # Compute the causual attention weights.
-    mask = _get_causal_mask(h * w).to(next(self.parameters()).device)
-    attn = (q @ k.transpose(1, 2)) / np.sqrt(self._embed_channels)
+    # Compute the causual attention weights. 
+    mask = _get_causal_mask(h * w).view(1, 1, h * w, h * w).to(
+        next(self.parameters()).device)
+    attn = (q @ k.transpose(2, 3)) / np.sqrt(self._embed_channels)
     attn = attn.masked_fill(mask == 0, -np.inf)
     attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 
-    return (attn @ v).transpose(1, 2).view(n, -1, h, w)
+    return (attn @ v).transpose(2, 3).contiguous().view(n, -1, h, w)

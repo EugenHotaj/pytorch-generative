@@ -91,9 +91,9 @@ class MaskedConv2d(nn.Conv2d):
 
 
 @functools.lru_cache(maxsize=32)
-def _get_causal_mask(size, is_causal=False):
+def _get_causal_mask(size):
   """Generates causal masks for attention weights."""
-  return torch.tril(torch.ones((size, size)), diagonal=-int(is_causal))
+  return torch.tril(torch.ones((size, size)), diagonal=-1)
 
 
 # TODO(eugenhotaj): Do we need to expose an is_causal argument here?
@@ -164,8 +164,6 @@ class MaskedAttention(nn.Module):
     mask = _get_causal_mask(h * w).to(next(self.parameters()).device)
     attn = (q @ k.transpose(1, 2)) / np.sqrt(self._embed_channels)
     attn = attn.masked_fill(mask == 0, -np.inf)
-    attn = F.softmax(attn, dim=-1)
+    attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 
     return (attn @ v).transpose(1, 2).view(n, -1, h, w)
-
- 

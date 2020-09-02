@@ -10,6 +10,7 @@ import functools
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 
 @functools.lru_cache(maxsize=32)
@@ -95,76 +96,76 @@ def _get_causal_mask(size, is_causal=False):
   return torch.tril(torch.ones((size, size)), diagonal=-int(is_causal))
 
 
+# TODO(eugenhotaj): Do we need to expose an is_causal argument here?
 class MaskedAttention(nn.Module):
-  """A 2d Attention layer masked to respect the autoregressive property.
+  """Autoregresively masked multihead self-attention layer.
 
   Autoregressive masking means that the current pixel can only attend to itself,
-  pixels to the left, and pixels above. When the attention weights are causally
-  masked (i.e. is_causal=True), the computation of the current pixel does not
-  depend on itself.
+  pixels to the left, and pixels above. 
+
+  This Module generalizes attention to use 2D convolutions instead of fully 
+  connected layers. As such, the input is expected to be 4D image tensors.
   """ 
 
   def __init__(self, 
-               query_channels, 
-               key_channels,
-               value_channels,
-               is_causal=False,
-               kv_extra_channels=0):
+               in_channels, 
+               n_heads=1,
+               embed_channels=None,
+               out_channels=None,
+               extra_input_channels=0):
     """Initializes a new MaskedAttention instance.
 
     Args:
-      query_channels: Number of (input) query channels.
-      key_channels: Number of key channels (i.e. key dimension).
-      value_channels: Number of (output) value channels.
-      is_causal: Whether the attention weights should be  causually masked. 
-      kv_extra_channels: Extra channels to use as input to the key and
-        value convolutions only. This is useful when using these channels as 
-        query inputs would break the autoregressive property. For example, in 
-        [2], the extra channels include the original input image.
+      in_channels: Number of input channels. 
+      n_heads: Number of causal self-attention heads.
+      embed_channels: Number of embedding channels. Defaults to in_channels.
+      out_channels: Number of output channels. Defaults to in_channels.
+      extra_input_channels: Extra input channels which are only used to compute
+        the embeddings and not the attention weights since doing so may break
+        the autoregressive property. For example, in [2] these channels include
+        the original input image.
     """
     super().__init__()
-    self._key_channels = key_channels
-    self._value_channels = value_channels
+    self._n_heads = n_heads
+    self._embed_channels = embed_channels or in_channels
+    self._out_channels = out_channels or in_channels 
 
-    kv_in_channels = query_channels + kv_extra_channels
-    self._query = nn.Conv2d(
-        in_channels=query_channels, 
-        out_channels=self._key_channels, 
-        kernel_size=1)
-    self._kv = nn.Conv2d(
-        in_channels=query_channels + kv_extra_channels, 
-        out_channels=self._key_channels + self._value_channels, 
-        kernel_size=1)
+    self._query = nn.Conv2d(in_channels=in_channels, 
+                            out_channels=self._embed_channels, kernel_size=1)
+    self._kv = nn.Conv2d(in_channels=in_channels + extra_input_channels,
+                         out_channels=embed_channels + out_channels, 
+                         kernel_size=1)
  
-  def forward(self, x, kv_extra_channels=None):
+  def forward(self, x, extra_x=None):
     """Computes the forward pass.
 
     Args:
-      x: The input used for the query, key, and value convolutions.
-      kv_extra_channels: Extra channels concatenated with x which are only
-        used as input to the key and value convolutions.
+      x: The input used to compute both embeddings and attention weights.
+      extra_x: Extra channels concatenated with 'x' only used to compute the
+        embeddings. See the 'extra_input_channels' argument for more info.
     Returns:
       The result of the forward pass.
     """
     n, _, h, w = x.shape 
 
-    # Compute the query, key, and value.
-    query = self._query(x).view(n, self._key_channels, -1)
-    if kv_extra_channels is not None:
-      x = torch.cat((x, kv_extra_channels), dim=1)
+    # Compute the q[uery], k[ey], and v[alue].
+    q = self._query(x).view(n, self._embed_channels, -1)
+    if extra_x is not None:
+      x = torch.cat((x, extra_x), dim=1)
     kv = self._kv(x)
-    key = kv[:, :self._key_channels, :, :].view(n, self._key_channels, -1)
-    value = kv[:, self._key_channels:, :, :].view(n, self._value_channels, -1)
+    k = kv[:, :self._embed_channels, :, :].view(n, self._embed_channels, -1)
+    v = kv[:, self._embed_channels:, :, :].view(n, self._out_channels, -1)
 
-    # TODO(eugenhotaj): Do we even need the stable softmax here? Will 
-    # torch.softmax work just as well?
-    # Compute the causual attention weights using stable softmax.
+    # Transpose q, k, v, to be in 'channels last' format as this is more common
+    # in the literature and other libraries.
+    q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+
+    # Compute the causual attention weights.
     mask = _get_causal_mask(h * w).to(next(self.parameters()).device)
-    probs = (query.permute(0, 2, 1) @ key) - (1. - mask) * 1e10
-    probs = probs - probs.max(dim=-1, keepdim=True)[0]
-    probs = torch.exp(probs / np.sqrt(self._key_channels)) * mask
-    probs = probs / (probs.sum(dim=-1, keepdim=True) + 1e-6)
-    
-    return (value @ probs.permute(0, 2, 1)).view(n, -1, h, w) 
+    attn = (q @ k.transpose(1, 2)) / np.sqrt(self._embed_channels)
+    attn = attn.masked_fill(mask == 0, -np.inf)
+    attn = F.softmax(attn, dim=-1)
+
+    return (attn @ v).transpose(1, 2).view(n, -1, h, w)
 
  

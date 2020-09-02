@@ -88,11 +88,10 @@ class PixelSNAILBlock(nn.Module):
     self._residual = nn.Sequential(
         *[ResidualBlock(n_channels) for _ in range(n_residual_blocks)])
     self._attention = pg_nn.MaskedAttention(
-        query_channels=n_channels + 2 * input_img_channels, 
-        key_channels=attention_key_channels,
-        value_channels=attention_value_channels, 
-        is_causal=True,
-        kv_extra_channels=input_img_channels)
+        in_channels=n_channels + 2 * input_img_channels, 
+        embed_channels=attention_key_channels,
+        out_channels=attention_value_channels, 
+        extra_input_channels=input_img_channels)
     self._residual_out = conv(n_channels)
     self._attention_out = conv(attention_value_channels)
     self._out = conv(n_channels)

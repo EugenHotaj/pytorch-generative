@@ -136,7 +136,7 @@ class MaskedAttention(nn.Module):
     self._query = nn.Conv2d(in_channels=in_channels, 
                             out_channels=self._embed_channels, kernel_size=1)
     self._kv = nn.Conv2d(in_channels=in_channels + extra_input_channels,
-                         out_channels=embed_channels + out_channels, 
+                         out_channels=self._embed_channels + self._out_channels, 
                          kernel_size=1)
 
   def forward(self, x, extra_x=None):
@@ -168,7 +168,7 @@ class MaskedAttention(nn.Module):
     # Compute the causual attention weights. 
     mask = _get_causal_mask(h * w, self._is_causal).view(1, 1, h * w, h * w).to(
         next(self.parameters()).device)
-    attn = (q @ k.transpose(2, 3)) / k.shape[-1]
+    attn = (q @ k.transpose(2, 3)) / np.sqrt(k.shape[-1])
     attn = attn.masked_fill(mask == 0, -np.inf)
     attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 

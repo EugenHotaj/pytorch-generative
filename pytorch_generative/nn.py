@@ -91,17 +91,17 @@ class MaskedConv2d(nn.Conv2d):
 
 
 @functools.lru_cache(maxsize=32)
-def _get_causal_mask(size):
+def _get_causal_mask(size, is_causal):
   """Generates causal masks for attention weights."""
-  return torch.tril(torch.ones((size, size)), diagonal=-1)
+  return torch.tril(torch.ones((size, size)), diagonal=-int(is_causal))
 
 
-# TODO(eugenhotaj): Do we need to expose an is_causal argument here?
 class MaskedAttention(nn.Module):
   """Autoregresively masked multihead self-attention layer.
 
   Autoregressive masking means that the current pixel can only attend to itself,
-  pixels to the left, and pixels above. 
+  pixels to the left, and pixels above. When the convolution is causally masked
+  (i.e. is_causal=True), the current pixel does not attent to itself.
 
   This Module generalizes attention to use 2D convolutions instead of fully 
   connected layers. As such, the input is expected to be 4D image tensors.
@@ -112,7 +112,8 @@ class MaskedAttention(nn.Module):
                n_heads=1,
                embed_channels=None,
                out_channels=None,
-               extra_input_channels=0):
+               extra_input_channels=0,
+               is_causal=True):
     """Initializes a new MaskedAttention instance.
 
     Args:
@@ -124,11 +125,13 @@ class MaskedAttention(nn.Module):
         the embeddings and not the attention weights since doing so may break
         the autoregressive property. For example, in [2] these channels include
         the original input image.
+      is_causal: Whether the convolution should be causally masked.
     """
     super().__init__()
     self._n_heads = n_heads
     self._embed_channels = embed_channels or in_channels
     self._out_channels = out_channels or in_channels 
+    self._is_causal = is_causal
 
     self._query = nn.Conv2d(in_channels=in_channels, 
                             out_channels=self._embed_channels, kernel_size=1)
@@ -155,18 +158,17 @@ class MaskedAttention(nn.Module):
 
     n, _, h, w = x.shape 
 
-    # Compute the q[uery], k[ey], and v[alue].
+    # Compute the query, key, and value.
     q = _to_multihead(self._query(x))
     if extra_x is not None:
       x = torch.cat((x, extra_x), dim=1)
-    kv = self._kv(x)
-    k = _to_multihead(kv[:, :self._embed_channels, :, :])
-    v = _to_multihead(kv[:, self._embed_channels:, :, :])
+    k, v = self._kv(x).split([self._embed_channels, self._out_channels], dim=1)
+    k, v = _to_multihead(k), _to_multihead(v)
 
     # Compute the causual attention weights. 
-    mask = _get_causal_mask(h * w).view(1, 1, h * w, h * w).to(
+    mask = _get_causal_mask(h * w, self._is_causal).view(1, 1, h * w, h * w).to(
         next(self.parameters()).device)
-    attn = (q @ k.transpose(2, 3)) / np.sqrt(self._embed_channels)
+    attn = (q @ k.transpose(2, 3)) / k.shape[-1]
     attn = attn.masked_fill(mask == 0, -np.inf)
     attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 

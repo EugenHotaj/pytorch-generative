@@ -7,6 +7,7 @@ Binary MNIST (NLL):
 
 | Algorithm | Our Results | Best Other Results | Links |
 | --- | ---| --- | --- |
+| ImageGPT | TODO | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/image_gpt.ipynb) |
 | PixelSNAIL | 78.61 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_snail.ipynb) |
 | Gated PixelCNN | 81.50 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/gated_pixel_cnn.ipynb) |
 | PixelCNN | 81.45 | **81.30** \[1\] | [Code](), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_cnn.ipynb) |

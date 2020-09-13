@@ -29,6 +29,14 @@ class ModelSmokeTestCase(unittest.TestCase):
     model = models.TinyCNN(in_channels=1)
     self._smoke_test(model)
 
+  def test_NADE(self):
+    model = models.NADE(input_dim=25, hidden_dim=5)
+    self._smoke_test(model)
+
+  def test_MADE(self):
+    model = models.MADE(input_dim=25, hidden_dims=[32, 32, 32], n_masks=8)
+    self._smoke_test(model)
+
   def test_PixelCNN(self):
     model = models.PixelCNN(in_channels=1,
                             out_dim=1,
@@ -36,7 +44,6 @@ class ModelSmokeTestCase(unittest.TestCase):
                             residual_channels=1,
                             head_channels=1)
     self._smoke_test(model)
-
 
   def test_GatedPixelCNN(self):
     model = models.GatedPixelCNN(in_channels=1,
@@ -55,12 +62,14 @@ class ModelSmokeTestCase(unittest.TestCase):
                               attention_key_channels=1,
                               attention_value_channels=1,
                               head_channels=1)
-    self._smoke_test(model)
+    self._smoke_test(model) 
 
-  def test_MADE(self):
-    model = models.MADE(input_dim=25, hidden_dims=[32, 32, 32], n_masks=8)
+  def test_ImageGPT(self):
+    model = models.ImageGPT(in_channels=1,
+                            in_size=5,
+                            out_dim=1,
+                            n_transformer_blocks=1,
+                            n_attention_heads=2,
+                            n_embedding_channels=4)
     self._smoke_test(model)
-
-  def test_NADE(self):
-    model = models.NADE(input_dim=25, hidden_dim=5)
-    self._smoke_test(model)
+                           

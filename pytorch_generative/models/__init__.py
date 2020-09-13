@@ -7,6 +7,7 @@ from torch import nn
 from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
 from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
+from pytorch_generative.models.image_gpt import ImageGPT
 from pytorch_generative.models.made import MADE
 from pytorch_generative.models.nade import NADE
 from pytorch_generative.models.pixel_cnn import PixelCNN
@@ -44,4 +45,12 @@ class TinyCNN(base.AutoregressiveModel):
     return self._probs_fn(out)
 
 
-__all__ = ['GatedPixelCNN', 'MADE', 'NADE', 'PixelCNN', 'PixelSNAIL', 'TinyCNN']
+__all__ = [
+    'GatedPixelCNN', 
+    'ImageGPT',
+    'MADE', 
+    'NADE',
+    'PixelCNN', 
+    'PixelSNAIL', 
+    'TinyCNN'
+]

@@ -1,5 +1,5 @@
 # pytorch-generative
-**pytorch-generative** aims to provide a simple, easy to use library for generative modeling in PyTorch. 
+**pytorch-generative** is a nascent project that aims to provide a simple, easy to use library for generative modeling in PyTorch. 
 
 The library makes generative model implementation and experimentation easier by abstracting common building blocks such as [MaskedConv2d](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py#L58-L96) and [MaskedAttention](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py#L99-L175).
 It also provides clean, high quality reference implementations of recent State of the Art papers that are easy to read, understand, and extend. 

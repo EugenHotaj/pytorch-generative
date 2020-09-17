@@ -9,7 +9,17 @@ So far, the library has primarily focues on Autoregressive modeling. The future 
 
 ## Example - ImageGPT
 
-To motivate the library, we provide an implementation of a convolutional ImageGPT-like model:
+Supported models are implemented as PyTorch Modules and are easy to use:
+
+```python
+from pytorch_generative import models
+
+model = models.ImageGPT(in_channels=1, in_size=28)
+...
+model(data)
+```
+
+Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) can be used to write models from scratch. For example, we implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/)-like model below:
 
 ```python
 
@@ -100,7 +110,7 @@ class ImageGPT(nn.Module):
 
 ## Supported Algorithms
 
- pytorch-generative supports the following algorithms. 
+ **pytorch-generative** supports the following algorithms. 
  We train most algorithms on [Binarized Mnist](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) 
  and either match or surpass the relevant papers.
 

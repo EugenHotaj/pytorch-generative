@@ -86,7 +86,6 @@ class ImageGPT(nn.Module):
       n_embedding_channels: Number of attention embedding channels to use.
     """
     super().__init__()
-    self._out_dim = out_dim
     self._pos = nn.Parameter(torch.zeros(1, in_channels, in_size, in_size))
     self._input = pg_nn.MaskedConv2d(
         is_causal=True,

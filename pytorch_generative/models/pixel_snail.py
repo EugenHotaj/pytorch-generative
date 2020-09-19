@@ -106,7 +106,7 @@ class PixelSNAILBlock(nn.Module):
       The result of the forward pass.
     """
     res = self._residual(x)
-    pos = pg_nn.image_positional_encoding(input_img.shape)
+    pos = pg_nn.image_positional_encoding(input_img.shape).to(res.device)
     attn = self._attention(torch.cat((pos, res), dim=1), input_img)
     res, attn = (_elu_conv_elu(self._residual_out, res), 
                  _elu_conv_elu(self._attention_out, attn))

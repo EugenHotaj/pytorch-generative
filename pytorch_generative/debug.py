@@ -13,10 +13,11 @@ def compute_receptive_field(model, img_size=(1, 3,  3)):
     model: Model for hich to compute the receptive field. Assumes NCHW input.
     img_size: The (channels, height, width) of the input to the model.
   """
-  c, h, w = img_size
-  img = torch.randn((1, c, h, w), requires_grad=True)
+  img = torch.randn((1,) + img_size, requires_grad=True)
   img_hat = model(img)
-  img_hat[0, 0, h//2, w//2].mean().backward()
+  h, w = img_hat.shape[-2:]
+  img_hat = (img_hat[0, 0, h//2, w//2] if len(img_hat.shape) == 4 
+             else img_hat[0, 0, 0, h//2, w//2]).mean().backward()
   grad = img.grad.abs()[0, 0, :, :]
   return torch.where(
       grad > 0, torch.ones_like(grad), torch.zeros_like(grad))

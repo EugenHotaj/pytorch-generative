@@ -55,6 +55,15 @@ class GatedActivation(nn.Module):
     return self._activation_fn(x) * torch.sigmoid(gate)
 
 
+class NCHWLayerNorm(nn.LayerNorm):
+  """Applies LayerNorm to the channel dimension of NCHW tensors."""
+
+  def forward(self, x):
+    x = x.permute(0, 2, 3, 1)
+    x = super().forward(x)
+    return x.permute(0, 3, 1, 2)
+
+
 class MaskedConv2d(nn.Conv2d):
   """A Conv2d layer masked to respect the autoregressive property.
 

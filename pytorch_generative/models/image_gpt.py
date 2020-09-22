@@ -34,6 +34,8 @@ class TransformerBlock(nn.Module):
       n_attention_heads: The number of attention heads to use.
     """
     super().__init__()
+    self._ln1 = pg_nn.NCHWLayerNorm(n_channels)
+    self._ln2 = pg_nn.NCHWLayerNorm(n_channels)
     self._attn = pg_nn.MaskedAttention(
         in_channels=n_channels,
         embed_channels=n_channels,
@@ -52,17 +54,16 @@ class TransformerBlock(nn.Module):
             kernel_size=1))
 
   def forward(self, x):
-    x = x + self._attn(x)
-    return x + self._out(x)
+    x = x + self._attn(self._ln1(x))
+    return x + self._out(self._ln2(x))
 
 
 class ImageGPT(base.AutoregressiveModel):
   """The ImageGPT Model.
   
   Unlike [1], our implementation operates over image inputs, instead of 
-  embeddings. Because of this, we don't use normalization (such as LayerNorm) 
-  because it would break the model's autoregressive property. Furthermore, we
-  implement skip connections from each block to the output. We find that this
+  embeddings. Furthermore, we implement skip connections from each block to the
+  output. We find that this
   makes training a lot more stable and allows for much faster convergence.
   """
   def __init__(self,       
@@ -100,6 +101,7 @@ class ImageGPT(base.AutoregressiveModel):
         TransformerBlock(n_channels=n_embedding_channels,
                          n_attention_heads=n_attention_heads)
         for _ in range(n_transformer_blocks))
+    self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,
                           out_channels=self._out_dim * in_channels,
                           kernel_size=1)
@@ -112,5 +114,5 @@ class ImageGPT(base.AutoregressiveModel):
     for block in self._transformer:
       x = block(x)
       skip = x + skip
-    out = self._out(skip).view(n, self._out_dim, c, h, w)
+    out = self._out(self._ln(skip)).view(n, self._out_dim, c, h, w)
     return self._probs_fn(out)

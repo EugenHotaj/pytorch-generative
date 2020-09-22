@@ -65,6 +65,7 @@ class ModelSmokeTestCase(unittest.TestCase):
     self._smoke_test(model) 
 
   def test_ImageGPT(self):
+    # Test ImageGPT using MaskedAttention.
     model = models.ImageGPT(in_channels=1,
                             in_size=5,
                             out_dim=1,
@@ -72,4 +73,15 @@ class ModelSmokeTestCase(unittest.TestCase):
                             n_attention_heads=2,
                             n_embedding_channels=4)
     self._smoke_test(model)
-                           
+
+    # Test ImageGPT using LinearMaskedAttention.
+    model = models.ImageGPT(in_channels=1,
+                            in_size=5,
+                            out_dim=1,
+                            n_transformer_blocks=1,
+                            n_attention_heads=2,
+                            n_embedding_channels=4,
+                            use_linear_attention=True)
+    self._smoke_test(model)
+
+

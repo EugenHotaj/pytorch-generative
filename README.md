@@ -41,6 +41,8 @@ class TransformerBlock(nn.Module):
       n_attention_heads: The number of attention heads to use.
     """
     super().__init__()
+    self._ln1 = pg_nn.NCHWLayerNorm(n_channels)
+    self._ln2 = pg_nn.NCHWLayerNorm(n_channels)
     self._attn = pg_nn.MaskedAttention(
         in_channels=n_channels,
         embed_channels=n_channels,
@@ -59,16 +61,12 @@ class TransformerBlock(nn.Module):
             kernel_size=1))
 
   def forward(self, x):
-    x = x + self._attn(x)
-    return x + self._out(x)
+    x = x + self._attn(self._ln1(x))
+    return x + self._out(self._ln2(x))
 
 
 class ImageGPT(nn.Module):
-  """The ImageGPT Model.
-  
-  Note that we don't use LayerNorm because it would break the model's 
-  autoregressive property.
-  """
+  """The ImageGPT Model."""
   
   def __init__(self,       
                in_channels,
@@ -97,6 +95,7 @@ class ImageGPT(nn.Module):
         *[TransformerBlock(n_channels=n_embedding_channels,
                          n_attention_heads=n_attention_heads)
           for _ in range(n_transformer_blocks)])
+    self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,
                           out_channels=in_channels,
                           kernel_size=1)
@@ -104,6 +103,7 @@ class ImageGPT(nn.Module):
   def forward(self, x):
     x = self._input(x + self._pos)
     x = self._transformer(x)
+    x = self._ln(x)
     return self._out(x)
 ```
 

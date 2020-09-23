@@ -220,6 +220,11 @@ class _UnnormalizedLinearMaskedAttention(autograd.Function):
     return dQ, dK, dV
 
 
+# TODO(eugenhotaj): LinearMaskedAttention currently does O(N) computations each
+# time forward is called. During sampling, forward is called N times to generate
+# N pixels. This means that during sampling  LinearMaskedAttention unnecessarily
+# does O(N^2) computations, most of which are thrown away. Instead, we can do
+# O(N) work during sampling by storing previous activations as proposed in [3].
 # TODO(eugenhotaj): This API does not match the MaskedAttention API. We need
 # to add support for is_causal and extra_input. There is also a lot of shared
 # code between the two which sould be extracted. It's probably possible to 
@@ -231,12 +236,12 @@ class LinearMaskedAttention(nn.Module):
   N.B.: LinearMaskedAttention is *much* slower than MaskedAttention and should
   only be used if your model cannot fit in memory.
 
-  This implementation only requiers O(N*C) memory (instead of O(N^2*C)) for a
-  sequence of N elements of size C (e.g. an image with N pixels and C channels).
-  To achieve this memory reduction, the implementation avoids storing the full
-  attention matrix in memory and instead computes the output directly as
-  Q @ (K @ V). However, this output cannot be vectorized and requires iterating
-  over the sequence, which drastically slows down the computation.
+  This implementation only requiers O(N) memory (instead of O(N^2)) for a
+  sequence of N elements (e.g. an image with N pixels). To achieve this memory
+  reduction, the implementation avoids storing the full attention matrix in
+  memory and instead computes the output directly as Q @ (K @ V). However, this
+  output cannot be vectorized and requires iterating over the sequence, which
+  drastically slows down the computation.
   """
 
   def __init__(self,
@@ -250,8 +255,8 @@ class LinearMaskedAttention(nn.Module):
 
     Args:
       in_channels: Number of input channels.
-      feature_fn: A kernel feature function applied to the Query and Key
-        activations. Defaults to lambda x: elu(x) + 1.
+      feature_fn: A kernel feature map applied to the Query and Key activations.
+        Defaults to lambda x: elu(x) + 1.
       n_heads: Number of causal self-attention heads.
       embed_channels: Number of embedding channels. Defaults to in_channels.
       out_channels: Number of output channels. Defaults to in_channels.

@@ -72,9 +72,9 @@ class ImageGPT(base.AutoregressiveModel):
   faster convergence.
   """
   def __init__(self,       
-               in_channels,
-               in_size,
-               out_dim=1,
+               in_channels=1,
+               out_channels=1,
+               in_size=28,
                n_transformer_blocks=8,
                n_attention_heads=4,
                n_embedding_channels=16,
@@ -84,9 +84,8 @@ class ImageGPT(base.AutoregressiveModel):
     
     Args:
       in_channels: The number of input channels.
+      out_channels: The number of output channels.
       in_size: Size of the input images. Used to create positional encodings.
-      out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the GatedPixelCNN model will be N(out_dim*C)HW.
       probs_fn: See the base class.
       n_transformer_blocks: Number of TransformerBlocks to use.
       n_attention_heads: Number of attention heads to use.
@@ -111,7 +110,7 @@ class ImageGPT(base.AutoregressiveModel):
         for _ in range(n_transformer_blocks))
     self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,
-                          out_channels=out_dim * in_channels,
+                          out_channels=out_channels,
                           kernel_size=1)
 
   def forward(self, x):

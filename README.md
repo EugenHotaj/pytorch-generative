@@ -70,6 +70,7 @@ class ImageGPT(nn.Module):
   
   def __init__(self,       
                in_channels,
+               out_channels,
                in_size,
                n_transformer_blocks=8,
                n_attention_heads=4,
@@ -78,6 +79,7 @@ class ImageGPT(nn.Module):
     
     Args:
       in_channels: The number of input channels.
+      out_channels: The number of output channels.
       in_size: Size of the input images. Used to create positional encodings.
       n_transformer_blocks: Number of TransformerBlocks to use.
       n_attention_heads: Number of attention heads to use.
@@ -97,7 +99,7 @@ class ImageGPT(nn.Module):
           for _ in range(n_transformer_blocks)])
     self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,
-                          out_channels=in_channels,
+                          out_channels=out_channels,
                           kernel_size=1)
 
   def forward(self, x):

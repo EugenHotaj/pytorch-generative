@@ -123,8 +123,7 @@ class PixelSNAIL(base.AutoregressiveModel):
 
   def __init__(self, 
                in_channels=1, 
-               out_dim=1,
-               probs_fn=torch.sigmoid,
+               out_channels=1,
                n_channels=64,
                n_pixel_snail_blocks=8,
                n_residual_blocks=2,
@@ -135,12 +134,8 @@ class PixelSNAIL(base.AutoregressiveModel):
     """Initializes a new PixelSNAIL instance.
 
     Args:
-      in_channels: The number of channels in the input image (typically either 
-        1 or 3 for black and white or color images respectively).
-      out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the model will be N(out_dim*C)HW.
-      probs_fn: See the base class.
-      sample_fn: See the base class.
+      in_channels: The number of input channels.
+      out_channels: The number of output_channels. 
       n_channels: The number of channels to use for convolutions.
       n_pixel_snail_blocks: The number of PixelSNAILBlocks. 
       n_residual_blocks: The number of ResidualBlock to use in each 
@@ -149,6 +144,7 @@ class PixelSNAIL(base.AutoregressiveModel):
         key.
       attention_value_channels: Number of channels (dimension) for the attention 
         value.
+      sample_fn: See the base class.
 
     """
     super().__init__(sample_fn)

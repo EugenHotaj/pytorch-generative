@@ -124,7 +124,7 @@ class GatedPixelCNN(base.AutoregressiveModel):
 
   def __init__(self, 
                in_channels=1, 
-               out_dim=1,
+               out_channels=1,
                n_gated=10,
                gated_channels=128,
                head_channels=32,
@@ -132,9 +132,8 @@ class GatedPixelCNN(base.AutoregressiveModel):
     """Initializes a new GatedPixelCNN instance.
     
     Args:
-      in_channels: The number of channels in the input.
-      out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the GatedPixelCNN model will be N(out_dim*C)HW.
+      in_channels: The number of input channels.
+      out_channels: The number of output channels.
       n_gated: The number of gated layers (not including the input layers).
       gated_channels: The number of channels to use in the gated layers.
       head_channels: The number of channels to use in the 1x1 convolution blocks
@@ -142,7 +141,6 @@ class GatedPixelCNN(base.AutoregressiveModel):
       sample_fn: See the base class.
     """
     super().__init__(sample_fn)
-
     self._input = GatedPixelCNNLayer(
       in_channels=in_channels,
       out_channels=gated_channels,
@@ -162,7 +160,7 @@ class GatedPixelCNN(base.AutoregressiveModel):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=out_dim * in_channels,
+                  out_channels=out_channels,
                   kernel_size=1))
 
   def forward(self, x):

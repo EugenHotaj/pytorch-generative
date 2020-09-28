@@ -55,7 +55,7 @@ class PixelCNN(base.AutoregressiveModel):
 
   def __init__(self, 
                in_channels=1, 
-               out_dim=1,
+               out_channels=1,
                n_residual=15,
                residual_channels=128, 
                head_channels=32,
@@ -63,10 +63,8 @@ class PixelCNN(base.AutoregressiveModel):
     """Initializes a new PixelCNN instance.
     
     Args:
-      in_channels: The number of channels in the input image (typically either 
-        1 or 3 for black and white or color images respectively).
-      out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the GatedPixelCNN model will be N(out_dim*C)HW.
+      in_channels: The number of input channels.
+      out_channels: The number of output channels.
       n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
       head_channels: The number of channels to use in the two 1x1 convolutional
@@ -74,7 +72,6 @@ class PixelCNN(base.AutoregressiveModel):
       sample_fn: See the base class.
     """
     super().__init__(sample_fn)
-
     self._input = pg_nn.MaskedConv2d(is_causal=True,
                                      in_channels=in_channels,
                                      out_channels=2*residual_channels, 
@@ -91,7 +88,7 @@ class PixelCNN(base.AutoregressiveModel):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=out_dim * in_channels, 
+                  out_channels=out_channels,
                   kernel_size=1))
 
   def forward(self, x):

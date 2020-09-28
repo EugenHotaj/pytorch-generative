@@ -19,21 +19,20 @@ class TinyCNN(base.AutoregressiveModel):
 
   def __init__(self, 
       in_channels=1, 
-      out_dim=1,
+      out_channels=1,
       sample_fn=None):
     """Initializes a new TinyCNN instance.
 
     Args:
       in_channels: Number of input channels.
-      out_dim: Dimension of the output per channel.
+      out_channels: Number of output channels.
       sample_fn: See the base class.
     """
     super().__init__(sample_fn)
-    self._out_dim = out_dim
     self._conv = pg_nn.MaskedConv2d(
         is_causal=True, 
         in_channels=in_channels,
-        out_channels=out_dim * in_channels, 
+        out_channels=out_channels,
         kernel_size=3, 
         padding=1)
 

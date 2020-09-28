@@ -27,7 +27,7 @@ class NADE(base.AutoregressiveModel):
       hidden_dim: The dimmension of the hidden layer. NADE only supports one
         hidden layer.
     """
-    super().__init__(probs_fn=None, sample_fn=None)
+    super().__init__()
     self._input_dim = input_dim
     self._hidden_dim = hidden_dim
     self.params = nn.ParameterDict({

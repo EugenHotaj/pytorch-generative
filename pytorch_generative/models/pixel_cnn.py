@@ -56,27 +56,24 @@ class PixelCNN(base.AutoregressiveModel):
   def __init__(self, 
                in_channels=1, 
                out_dim=1,
-               probs_fn=torch.sigmoid,
-               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_residual=15,
                residual_channels=128, 
-               head_channels=32):
+               head_channels=32,
+               sample_fn=None):
     """Initializes a new PixelCNN instance.
     
     Args:
       in_channels: The number of channels in the input image (typically either 
         1 or 3 for black and white or color images respectively).
       out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the model will be N out_dim CHW.
-      probs_fn: See the base class.
-      sample_fn: See the base class.
+        output from the GatedPixelCNN model will be N(out_dim*C)HW.
       n_residual: The number of residual blocks.
       residual_channels: The number of channels to use in the residual layers.
       head_channels: The number of channels to use in the two 1x1 convolutional
         layers at the head of the network.
+      sample_fn: See the base class.
     """
-    super().__init__(probs_fn, sample_fn)
-    self._out_dim = out_dim
+    super().__init__(sample_fn)
 
     self._input = pg_nn.MaskedConv2d(is_causal=True,
                                      in_channels=in_channels,
@@ -94,15 +91,11 @@ class PixelCNN(base.AutoregressiveModel):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=self._out_dim * in_channels, 
+                  out_channels=out_dim * in_channels, 
                   kernel_size=1))
 
   def forward(self, x):
-    n, c, h, w = x.shape
     x = self._input(x)
-    skip = torch.zeros_like(x) + x
     for layer in self._masked_layers:
-      x = layer(x)
-      skip += x
-    out = self._head(skip).view((n, self._out_dim, c, h, w))
-    return self._probs_fn(out)
+      x = x + layer(x)
+    return self._head(x)

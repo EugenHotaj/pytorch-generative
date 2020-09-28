@@ -46,7 +46,7 @@ class MADE(base.AutoregressiveModel):
       hidden_dims: A list containing the number of units for each hidden layer.
       n_masks: The total number of distinct masks to use during training/eval.
     """
-    super().__init__(probs_fn=None, sample_fn=None)
+    super().__init__()
     self._input_dim = input_dim
     self._dims = [self._input_dim] + (hidden_dims or []) + [self._input_dim]
     self._n_masks = n_masks

@@ -125,27 +125,24 @@ class GatedPixelCNN(base.AutoregressiveModel):
   def __init__(self, 
                in_channels=1, 
                out_dim=1,
-               probs_fn=torch.sigmoid,
-               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_gated=10,
                gated_channels=128,
-               head_channels=32):
+               head_channels=32,
+               sample_fn=None):
     """Initializes a new GatedPixelCNN instance.
     
     Args:
       in_channels: The number of channels in the input.
       out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the GatedPixelCNN model will be N out_dim CHW.
-      probs_fn: See the base class.
-      sample_fn: See the base class.
+        output from the GatedPixelCNN model will be N(out_dim*C)HW.
       n_gated: The number of gated layers (not including the input layers).
       gated_channels: The number of channels to use in the gated layers.
       head_channels: The number of channels to use in the 1x1 convolution blocks
         in the head after all the gated channels.
+      sample_fn: See the base class.
     """
-    super().__init__(probs_fn, sample_fn)
+    super().__init__(sample_fn)
 
-    self._out_dim = out_dim
     self._input = GatedPixelCNNLayer(
       in_channels=in_channels,
       out_channels=gated_channels,
@@ -165,14 +162,12 @@ class GatedPixelCNN(base.AutoregressiveModel):
                   kernel_size=1),
         nn.ReLU(),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=self._out_dim * in_channels,
+                  out_channels=out_dim * in_channels,
                   kernel_size=1))
 
   def forward(self, x):
-    n, c, h, w = x.shape
     vstack, hstack, skip_connections = self._input(x, x)
     for gated_layer in self._gated_layers:
       vstack, hstack, skip = gated_layer(vstack, hstack)
       skip_connections += skip
-    out = self._head(skip_connections).view(n, self._out_dim, c, h, w)
-    return self._probs_fn(out)
+    return self._head(skip_connections)

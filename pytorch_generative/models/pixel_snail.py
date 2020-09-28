@@ -125,20 +125,20 @@ class PixelSNAIL(base.AutoregressiveModel):
                in_channels=1, 
                out_dim=1,
                probs_fn=torch.sigmoid,
-               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_channels=64,
                n_pixel_snail_blocks=8,
                n_residual_blocks=2,
                attention_key_channels=4,
                attention_value_channels=32,
-               head_channels=1):
+               head_channels=1,
+               sample_fn=None):
     """Initializes a new PixelSNAIL instance.
 
     Args:
       in_channels: The number of channels in the input image (typically either 
         1 or 3 for black and white or color images respectively).
       out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the model will be N out_dim CHW.
+        output from the model will be N(out_dim*C)HW.
       probs_fn: See the base class.
       sample_fn: See the base class.
       n_channels: The number of channels to use for convolutions.
@@ -151,9 +151,7 @@ class PixelSNAIL(base.AutoregressiveModel):
         value.
 
     """
-    super().__init__(probs_fn, sample_fn)
-    self._out_dim = out_dim
-    
+    super().__init__(sample_fn)
     self._input = pg_nn.MaskedConv2d(is_causal=True, 
                                      in_channels=in_channels, 
                                      out_channels=n_channels,
@@ -170,17 +168,12 @@ class PixelSNAIL(base.AutoregressiveModel):
         nn.Conv2d(
           in_channels=n_channels, out_channels=head_channels, kernel_size=1),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=self._out_dim * in_channels, 
+                  out_channels=out_dim * in_channels, 
                   kernel_size=1))
 
   def forward(self, x):
-    n, c, h, w = x.shape
-
     input_img = x
     x = self._input(x)
-    skip = x
     for block in self._pixel_snail_blocks:
-      x = block(skip, input_img)
-      skip += x
-    out = self._output(skip).view(n, self._out_dim, c, h, w)
-    return self._probs_fn(out)
+      x = x + block(x, input_img)
+    return self._output(x)

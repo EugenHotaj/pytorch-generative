@@ -4,22 +4,23 @@ import torch
 from torch import distributions
 from torch import nn
 
+def _default_sample_fn(logits):
+  return distributions.Bernoulli(logits=logits).sample()
+
 
 class AutoregressiveModel(nn.Module):
   """The base class for Autoregressive generative models. """
 
-  def __init__(self, probs_fn, sample_fn):
+  def __init__(self, sample_fn=None):
     """Initializes a new AutoregressiveModel instance.
 
     Args:
-      probs_fn: A function which takes as input the model's logits and returns
-        probabilities.
-      sample_fn: A function which takes as input sufficient statistics of some
-        distribution and returns a sample from that distribution.
+      sample_fn: A fn(logits)->sample which takes sufficient statistics of a
+        distribution as input and returns a sample from that distribution.
+        Defaults to the Bernoulli distribution.
     """
     super().__init__()
-    self._probs_fn = probs_fn
-    self._sample_fn = sample_fn
+    self._sample_fn = sample_fn or _default_sample_fn
 
   def _get_conditioned_on(self, out_shape, conditioned_on):
     assert out_shape is None or conditioned_on is None, \
@@ -52,7 +53,7 @@ class AutoregressiveModel(nn.Module):
       n, c, h, w = conditioned_on.shape
       for row in range(h):
         for col in range(w):
-          out = self.forward(conditioned_on)[:, :, :, row, col]
+          out = self.forward(conditioned_on)[:, :, row, col]
           out = self._sample_fn(out).view(n, c)
           conditioned_on[:, :, row, col] = torch.where(
               conditioned_on[:, :, row, col] < 0,

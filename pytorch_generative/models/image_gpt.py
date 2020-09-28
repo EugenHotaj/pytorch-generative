@@ -75,30 +75,28 @@ class ImageGPT(base.AutoregressiveModel):
                in_channels,
                in_size,
                out_dim=1,
-               probs_fn=torch.sigmoid,
-               sample_fn=lambda x: distributions.Bernoulli(probs=x).sample(),
                n_transformer_blocks=8,
                n_attention_heads=4,
                n_embedding_channels=16,
-               use_linear_attention=False):
+               use_linear_attention=False,
+               sample_fn=None):
     """Initializes a new ImageGPT instance.
     
     Args:
       in_channels: The number of input channels.
       in_size: Size of the input images. Used to create positional encodings.
       out_dim: The dimension of the output. Given input of the form NCHW, the 
-        output from the model will be N out_dim CHW.
+        output from the GatedPixelCNN model will be N(out_dim*C)HW.
       probs_fn: See the base class.
-      sample_fn: See the base class.
       n_transformer_blocks: Number of TransformerBlocks to use.
       n_attention_heads: Number of attention heads to use.
       n_embedding_channels: Number of attention embedding channels to use.
       use_linear_attention: Whether to use pg_nn.LinearMaskedAttention for the
         attention computation. LinearMaskedAttention is much more memory 
         efficient than MaskedAttention but is much slower to compute.
+      sample_fn: See the base class.
     """
-    super().__init__(probs_fn, sample_fn)
-    self._out_dim = out_dim
+    super().__init__(sample_fn)
     self._pos = nn.Parameter(torch.zeros(1, in_channels, in_size, in_size))
     self._input = pg_nn.MaskedConv2d(
         is_causal=True, 
@@ -113,16 +111,11 @@ class ImageGPT(base.AutoregressiveModel):
         for _ in range(n_transformer_blocks))
     self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,
-                          out_channels=self._out_dim * in_channels,
+                          out_channels=out_dim * in_channels,
                           kernel_size=1)
 
   def forward(self, x):
-    n, c, h, w = x.shape
-
     x = self._input(x + self._pos)
-    skip = x
     for block in self._transformer:
-      x = block(x)
-      skip = skip + x
-    out = self._out(self._ln(skip)).view(n, self._out_dim, c, h, w)
-    return self._probs_fn(out)
+      x = x + block(x)
+    return self._out(self._ln(x))

@@ -14,7 +14,7 @@ Supported models are implemented as PyTorch Modules and are easy to use:
 ```python
 from pytorch_generative import models
 
-model = models.ImageGPT(in_channels=1, in_size=28)
+model = models.ImageGPT(in_channels=1, out_channels=1, in_size=28)
 ...
 model(data)
 ```

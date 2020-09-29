@@ -39,7 +39,7 @@ class ModelSmokeTestCase(unittest.TestCase):
 
   def test_PixelCNN(self):
     model = models.PixelCNN(in_channels=1,
-                            out_dim=1,
+                            out_channels=1,
                             n_residual=1,
                             residual_channels=1,
                             head_channels=1)
@@ -47,7 +47,7 @@ class ModelSmokeTestCase(unittest.TestCase):
 
   def test_GatedPixelCNN(self):
     model = models.GatedPixelCNN(in_channels=1,
-                                 out_dim=1,
+                                 out_channels=1,
                                  n_gated=1,
                                  gated_channels=1,
                                  head_channels=1)
@@ -55,7 +55,7 @@ class ModelSmokeTestCase(unittest.TestCase):
 
   def test_PixelSNAIL(self):
     model = models.PixelSNAIL(in_channels=1,
-                              out_dim=1,
+                              out_channels=1,
                               n_channels=1,
                               n_pixel_snail_blocks=1,
                               n_residual_blocks=1,
@@ -68,7 +68,7 @@ class ModelSmokeTestCase(unittest.TestCase):
     # Test ImageGPT using MaskedAttention.
     model = models.ImageGPT(in_channels=1,
                             in_size=5,
-                            out_dim=1,
+                            out_channels=1,
                             n_transformer_blocks=1,
                             n_attention_heads=2,
                             n_embedding_channels=4)
@@ -77,7 +77,7 @@ class ModelSmokeTestCase(unittest.TestCase):
     # Test ImageGPT using LinearMaskedAttention.
     model = models.ImageGPT(in_channels=1,
                             in_size=5,
-                            out_dim=1,
+                            out_channels=1,
                             n_transformer_blocks=1,
                             n_attention_heads=2,
                             n_embedding_channels=4,

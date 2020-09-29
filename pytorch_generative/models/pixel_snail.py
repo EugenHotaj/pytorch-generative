@@ -164,7 +164,7 @@ class PixelSNAIL(base.AutoregressiveModel):
         nn.Conv2d(
           in_channels=n_channels, out_channels=head_channels, kernel_size=1),
         nn.Conv2d(in_channels=head_channels, 
-                  out_channels=out_dim * in_channels, 
+                  out_channels=out_channels, 
                   kernel_size=1))
 
   def forward(self, x):

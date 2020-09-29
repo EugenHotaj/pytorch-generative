@@ -121,12 +121,12 @@ Binary MNIST (NLL):
 
 | Algorithm | Our Results | Best Other Results | Links |
 | --- | ---| --- | --- |
-| ImageGPT | TODO | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/image_gpt.ipynb) |
-| PixelSNAIL | 78.61 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_snail.ipynb) |
-| Gated PixelCNN | 81.50 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/gated_pixel_cnn.ipynb) |
-| PixelCNN | 81.45 | **81.30** \[1\] | [Code](), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/pixel_cnn.ipynb) |
-| MADE | **84.867** | 88.04 \[4\]| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/MADE.ipynb) |
-| NADE | **85.65** | 88.86 \[5\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py), [Notebook](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/NADE.ipynb) |
+| ImageGPT | TODO | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py) |
+| PixelSNAIL | 78.61 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py) |
+| Gated PixelCNN | 81.50 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py) |
+| PixelCNN | 81.45 | **81.30** \[1\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_cnn.py) |
+| MADE | **84.867** | 88.04 \[4\]| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py) |
+| NADE | **85.65** | 88.86 \[5\] | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py) |
 
 *Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
 

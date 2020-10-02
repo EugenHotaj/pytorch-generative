@@ -91,6 +91,7 @@ class PixelSNAILBlock(nn.Module):
         in_channels=n_channels + 2 * input_img_channels, 
         embed_channels=attention_key_channels,
         out_channels=attention_value_channels, 
+        is_causal=True,
         extra_input_channels=input_img_channels)
     self._residual_out = conv(n_channels)
     self._attention_out = conv(attention_value_channels)

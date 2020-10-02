@@ -26,27 +26,21 @@ class TransformerBlock(nn.Module):
 
   def __init__(self, 
                n_channels, 
-               n_attention_heads, 
-               use_linear_attention=False):
+               n_attention_heads):
     """Initializes a new TransformerBlock instance.
 
     Args:
       n_channels: The number of input and output channels.
       n_attention_heads: The number of attention heads to use.
-      use_linear_attention: Whether to use LinearMaskedAttention instead of the
-        regular MaskedAttention.
     """
     super().__init__()
     self._ln1 = pg_nn.NCHWLayerNorm(n_channels)
     self._ln2 = pg_nn.NCHWLayerNorm(n_channels)
-    attn = (pg_nn.LinearMaskedAttention if use_linear_attention 
-            else pg_nn.MaskedAttention)
-    self._attn = attn(
-        in_channels=n_channels,
-        embed_channels=n_channels,
-        out_channels=n_channels,
-        n_heads=n_attention_heads,
-        is_causal=False)
+    self._attn = pg_nn.MaskedAttention(
+            in_channels=n_channels,
+            n_heads=n_attention_heads,
+            embed_channels=n_channels,
+            out_channels=n_channels)
     self._out = nn.Sequential(
         nn.Conv2d(
             in_channels=n_channels, 
@@ -78,7 +72,6 @@ class ImageGPT(base.AutoregressiveModel):
                n_transformer_blocks=8,
                n_attention_heads=4,
                n_embedding_channels=16,
-               use_linear_attention=False,
                sample_fn=None):
     """Initializes a new ImageGPT instance.
     
@@ -90,9 +83,6 @@ class ImageGPT(base.AutoregressiveModel):
       n_transformer_blocks: Number of TransformerBlocks to use.
       n_attention_heads: Number of attention heads to use.
       n_embedding_channels: Number of attention embedding channels to use.
-      use_linear_attention: Whether to use pg_nn.LinearMaskedAttention for the
-        attention computation. LinearMaskedAttention is much more memory 
-        efficient than MaskedAttention but is much slower to compute.
       sample_fn: See the base class.
     """
     super().__init__(sample_fn)
@@ -105,8 +95,7 @@ class ImageGPT(base.AutoregressiveModel):
         padding=1)
     self._transformer = nn.ModuleList(
         TransformerBlock(n_channels=n_embedding_channels,
-                         n_attention_heads=n_attention_heads,
-                         use_linear_attention=use_linear_attention)
+                         n_attention_heads=n_attention_heads)
         for _ in range(n_transformer_blocks))
     self._ln = pg_nn.NCHWLayerNorm(n_embedding_channels)
     self._out = nn.Conv2d(in_channels=n_embedding_channels,

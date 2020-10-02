@@ -123,7 +123,7 @@ class MaskedAttention(nn.Module):
                n_heads=1,
                embed_channels=None,
                out_channels=None,
-               is_causal=True,
+               is_causal=False,
                extra_input_channels=0):
     """Initializes a new MaskedAttention instance.
 
@@ -144,11 +144,14 @@ class MaskedAttention(nn.Module):
     self._out_channels = out_channels or in_channels 
     self._is_causal = is_causal
 
-    self._query = nn.Conv2d(in_channels=in_channels, 
-                            out_channels=self._embed_channels, kernel_size=1)
+    self._q = nn.Conv2d(in_channels=in_channels, 
+                        out_channels=self._embed_channels, kernel_size=1)
     self._kv = nn.Conv2d(in_channels=in_channels + extra_input_channels,
                          out_channels=self._embed_channels + self._out_channels, 
                          kernel_size=1)
+    # TODO(eugenhotaj): Should we only project if n_heads > 1?
+    self._proj = nn.Conv2d(in_channels=out_channels, out_channels=out_channels,
+                           kernel_size=1) 
 
   def forward(self, x, extra_x=None):
     """Computes the forward pass.
@@ -170,7 +173,7 @@ class MaskedAttention(nn.Module):
     n, _, h, w = x.shape 
 
     # Compute the query, key, and value.
-    q = _to_multihead(self._query(x))
+    q = _to_multihead(self._q(x))
     if extra_x is not None:
       x = torch.cat((x, extra_x), dim=1)
     k, v = self._kv(x).split([self._embed_channels, self._out_channels], dim=1)
@@ -183,7 +186,9 @@ class MaskedAttention(nn.Module):
     attn = attn.masked_fill(mask == 0, -np.inf)
     attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 
-    return (attn @ v).transpose(2, 3).contiguous().view(n, -1, h, w)
+    # Attent to output for each head, stack, and project.
+    out = (attn @ v).transpose(2, 3).contiguous().view(n, -1, h, w)
+    return self._proj(out)
 
 
 def _idx(i):

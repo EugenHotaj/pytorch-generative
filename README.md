@@ -121,8 +121,8 @@ Binary MNIST (NLL):
 
 | Algorithm | Our Results | Paper Results | Links |
 | --- | ---| --- | --- |
-| ImageGPT | TODO | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py) |
-| PixelSNAIL | 78.61 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py) |
+| ImageGPT | 79.17 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py) |
+| PixelSNAIL | **78.61** | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py) |
 | Gated PixelCNN | 81.50 | 81.30 ([paper](https://arxiv.org/abs/1601.06759)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py) |
 | PixelCNN | 81.45 | 81.30 ([paper](https://arxiv.org/abs/1601.06759)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_cnn.py) |
 | MADE | 84.87 | 88.04 ([paper](https://arxiv.org/abs/1502.03509)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py) |

@@ -63,22 +63,22 @@ class PixelSNAILBlock(nn.Module):
   
   def __init__(self, 
                n_channels,
+               input_img_channels=1,
                n_residual_blocks=2,
                attention_key_channels=4,
-               attention_value_channels=32,
-               input_img_channels=1):
+               attention_value_channels=32):
     """Initializes a new PixelSnailBlock instance.
 
     Args:
       n_channels: Number of input and output channels.
+      input_img_channels: The number of channels in the original input_img.
+        Used for the positional encoding channels and the extra channels for 
+        the key and value convolutions in the attention block.
       n_residual_blocks: Number of residual blocks.
       attention_key_channels: Number of channels (dimension) for the attention 
         key.
       attention_value_channels: Number of channels (dimension) for the attention 
         value.
-      original_input_channels: The number of channels in the original input_img.
-        Used for the positional encoding channels and the extra channels for 
-        the key and value convolutions in the attention block.
     """
     super().__init__()
 
@@ -156,6 +156,7 @@ class PixelSNAIL(base.AutoregressiveModel):
                                      padding=1)
     self._pixel_snail_blocks = nn.ModuleList([
         PixelSNAILBlock(n_channels=n_channels,
+                        input_img_channels=in_channels,
                         n_residual_blocks=n_residual_blocks, 
                         attention_key_channels=attention_key_channels,
                         attention_value_channels=attention_value_channels)

@@ -3,13 +3,18 @@
 import unittest
 
 import torch
+from torch import distributions
 
 from pytorch_generative import models
 
+def _multi_channel_test_sample_fn(x):
+  x = x.reshape(2, 3, 10)
+  return distributions.Categorical(logits=x).sample().type(torch.float32)
+
 class ModelSmokeTestCase(unittest.TestCase):
 
-  def _smoke_test(self, model):
-    shape = (2, 1, 5, 5)
+  def _smoke_test(self, model, in_channels=1):
+    shape = (2, in_channels, 5, 5)
     
     # Test forward().
     batch = torch.rand(shape)
@@ -54,15 +59,16 @@ class ModelSmokeTestCase(unittest.TestCase):
     self._smoke_test(model)
 
   def test_PixelSNAIL(self):
-    model = models.PixelSNAIL(in_channels=1,
-                              out_channels=1,
+    model = models.PixelSNAIL(in_channels=3,
+                              out_channels=3*10,
                               n_channels=1,
                               n_pixel_snail_blocks=1,
                               n_residual_blocks=1,
                               attention_key_channels=1,
                               attention_value_channels=1,
-                              head_channels=1)
-    self._smoke_test(model) 
+                              head_channels=1,
+                              sample_fn=_multi_channel_test_sample_fn)
+    self._smoke_test(model, in_channels=3) 
 
   def test_ImageGPT(self):
     # Test ImageGPT using MaskedAttention.

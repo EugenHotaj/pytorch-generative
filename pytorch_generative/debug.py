@@ -1,6 +1,7 @@
 """Utilities for debugging models in PyTorch."""
 
 import torch
+from torch.utils.data import dataset
 
 
 def compute_receptive_field(model, img_size=(1, 3,  3)):
@@ -26,7 +27,7 @@ class OneExampleLoaderWrapper:
 
   def __init__(self, loader):
     """Initializes a new OneBatchLoaderWrapper instance.
-    
+
     Args:
       loader: The torch.utils.DataLoader to wrap. We assume the loader returns
         tuples of batches where each item in the tuple has batch_size as
@@ -36,8 +37,7 @@ class OneExampleLoaderWrapper:
     """
     self._exhausted = False
     batch = next(iter(loader))
-    # TODO(eugenhotaj): Consider using an actual PyTorch dataset. 
-    self.dataset = [item[:1] for item in batch]
+    self.dataset = dataset.TensorDataset(*[item[:1] for item in batch])
 
   def __iter__(self):
     self._exhausted = False
@@ -46,8 +46,8 @@ class OneExampleLoaderWrapper:
   def __next__(self):
     if not self._exhausted:
       self._exhausted = True
-      return self.dataset
-    raise StopIteration() 
+      return self.dataset[:]
+    raise StopIteration()
 
 
 class OneBatchLoaderWrapper:
@@ -60,8 +60,7 @@ class OneBatchLoaderWrapper:
       loader: The torch.utils.DataLoader to wrap.
     """
     self._exhausted = False
-    # TODO(eugenhotaj): Consider using an actual PyTorch dataset. 
-    self.dataset = next(iter(loader))
+    self.dataset = dataset.TensorDataset(*next(iter(loader)))
 
   def __iter__(self):
     self._exhausted = False
@@ -70,5 +69,5 @@ class OneBatchLoaderWrapper:
   def __next__(self):
     if not self._exhausted:
       self._exhausted = True
-      return self.dataset
-    raise StopIteration() 
+      return self.dataset[:]
+    raise StopIteration()

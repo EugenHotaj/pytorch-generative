@@ -3,7 +3,8 @@
 References (used throughout the code):
   [1]: https://arxiv.org/abs/1601.06759
   [2]: https://arxiv.org/abs/1712.09763
-  [3]: https://arxiv.org/pdf/2006.16236.pdf
+  [3]: https://arxiv.org/abs/2006.16236
+  [4]: https://arxiv.org/abs/1711.00937
 """
 
 import functools
@@ -13,6 +14,7 @@ import torch
 from torch import autograd
 from torch import nn
 from torch.nn import functional as F
+from torch.nn import init
 
 
 @functools.lru_cache(maxsize=32)
@@ -301,3 +303,63 @@ class LinearMaskedAttention(nn.Module):
     num = self._numerator(Q, K, V)
     out = num * torch.unsqueeze(den, -1)
     return out.transpose(2, 3).contiguous().view(n, -1, h, w)
+
+
+# TODO(eugenhotaj): It's a little strange that this module computes and returns
+# a loss since the embeddings can be trained in other ways (e.g. EMA). From 
+# an API perspective, it might make more sense to let the user compute the loss.
+class VectorQuantizer(nn.Module):
+  """A vector quantizer as introduced in [4].
+  
+  Inputs are quantized to the closest embedding in Euclidian distance.
+  """
+
+  def __init__(self, n_embeddings, embedding_dim, commitment_loss_weight=0.25):
+    """Initializes a new VectorQuantizer instance.
+    
+    Args:
+      n_embeddings: The number of embedding vectors. Higher values correspond
+        to higher capacity in the information bottleneck.
+      embedding_dim: Dimension of each embedding vector. Does not directly 
+        affect the capacity in the information bottleneck.
+      commitment_loss_weight: The weight applied to the commitment loss (i.e. 
+        the loss is incurred by the encoder for commiting to a particular
+        representaiton, Beta in equation 4 of [x]). Should be set so that 
+        the comitment loss is on the same scale as the reconstruction loss.
+    """
+    super().__init__()
+    self.n_embeddings = n_embeddings
+    self.embedding_dim = embedding_dim
+    self.commitment_loss_weight = commitment_loss_weight
+
+    self._embedding = nn.Embedding(self.n_embeddings, self.embedding_dim)
+    init.kaiming_uniform_(self._embedding.weight, nonlinearity='linear')
+
+  def forward(self, x):
+    """Returns a tuple of (forward result, quantization loss)."""
+    n, c, h, w = x.shape
+    assert c == self.embedding_dim, "Input channels must equal embedding_dim."
+    emb = self._embedding.weight
+    
+    flat_x = x.permute(0, 2, 3, 1).contiguous().view(-1, self.embedding_dim)
+    # Efficient L2 distance computation which does not require materializing the
+    # huge NWH * n_embeddings * embedding_dim matrix. The computation follows
+    # straightforwardly from Euclidian distance definition. For more info, see
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.euclidean_distances.html.
+    distances = (torch.sum(flat_x**2, dim=1, keepdim=True) + 
+                 torch.sum(emb**2, dim=1) -
+                 2 * flat_x @ emb.t())
+    
+    # Quantize to closest embedding vector.
+    idxs = torch.argmin(distances, dim=1, keepdim=True)
+    one_hot = torch.zeros(idxs.shape[0], self.n_embeddings, device=emb.device)
+    one_hot.scatter_(1, idxs, 1)
+    quantized = (one_hot @ emb).view(n, h, w, c).permute(0, 3, 1, 2).contiguous()
+
+    # Compute losses.
+    quantization_loss = F.mse_loss(quantized, x.detach())
+    commitment_loss = F.mse_loss(quantized.detach(), x)
+    loss = quantization_loss + self.commitment_loss_weight * commitment_loss
+
+    quantized = x + (quantized - x).detach()  # Straight through estimator.
+    return quantized, loss

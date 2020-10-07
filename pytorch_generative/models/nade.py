@@ -1,10 +1,10 @@
 """Implementation of Neural Autoregressive Distribution Estimator (NADE) [1].
 
-NADE can be viewed as a one hidden layer autoencoder which is masked to satisfy
-the autoregressive property. This allows NADE to act as a generative model by
-explicitly estimating p(X) as a factor of conditional probabilities, i.e, P(X) =
-\prod_i^D p(X_i|X_{j<i}), where X is a feature vector and D is the 
-dimensionality of X. For the full details, see [1].
+NADE can be viewed as a one hidden layer autoencoder masked to satisfy the 
+autoregressive property. This masking allows NADE to act as a generative model
+by explicitly estimating p(X) as a factor of conditional probabilities, i.e,
+P(X) = \prod_i^D p(X_i|X_{j<i}), where X is a feature vector and D is the 
+dimensionality of X.
 
 [1]: https://arxiv.org/abs/1605.02226
 """

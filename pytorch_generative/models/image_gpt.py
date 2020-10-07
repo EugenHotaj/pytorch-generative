@@ -1,13 +1,12 @@
-"""Implementation of (convolutional) ImageGPT.
+"""Implementation of (convolutional) ImageGPT [1].
 
-ImageGPT is an autoregressive generative model which uses a (decoder only)
-Transformer architecture for image generation.
+ImageGPT is an autoregressive model which applies the (decoder only) Transformer
+architecture to image generation.
 
-N.B.: Our implementation operates over images instead of embedding tokens like 
+NOTE: Our implementation operates over images instead of embedding tokens like 
 [1]. This defeats the purpose slightly as the main motivation of the original 
 paper is to demonstrate that the same architecture can be effective for both 
-images and text. Our intention, instead, is to demonstrate the capabilities of
-the pytorch-generative library.
+images and text.
 
 References (used throughout the file):
   [1]: https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf

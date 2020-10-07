@@ -1,12 +1,16 @@
 """Implementation of PixelCNN [1].
 
-TODO(eugenhotaj): Explain.
+PixelCNN extends Masked Autoregressive Density Estimation (MADE) [2] to 
+convolutional neural networks. Convolutional filters are masked to respect the
+autoregressive property so that the outputs of each filter only depend on left
+and above inputs (see MaskedConv2d for details).
 
 NOTE: Our implementation does *not* use autoregressive channel masking. This
 means that each output depends on whole pixels and not sub-pixels. For outputs
-with multiple channels, other methods can be used, e.g. [2].
+with multiple channels, other methods can be used, e.g. [3].
 
-[1]: https://arxiv.org/abs/1606.05328
+[1]: https://arxiv.org/abs/1601.06759
+[2]: https://arxiv.org/abs/1502.03509
 [2]: https://arxiv.org/abs/1701.05517
 """
 
@@ -29,8 +33,7 @@ class MaskedResidualBlock(nn.Module):
     """
     super().__init__()
     self._net = nn.Sequential(
-        # NOTE(eugenhotaj): The PixelCNN paper users ReLU->Conv2d since they do
-        # not use a ReLU in the first layer. 
+        nn.ReLU(),
         nn.Conv2d(in_channels=n_channels, 
                   out_channels=n_channels//2, 
                   kernel_size=1),
@@ -43,8 +46,7 @@ class MaskedResidualBlock(nn.Module):
         nn.ReLU(),
         nn.Conv2d(in_channels=n_channels//2, 
                   out_channels=n_channels,
-                  kernel_size=1),
-        nn.ReLU())
+                  kernel_size=1))
 
   def forward(self, x):
     return x + self._net(x)

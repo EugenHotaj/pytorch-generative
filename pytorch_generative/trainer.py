@@ -37,7 +37,7 @@ class Trainer:
             log_dir: The directory where to log checkpoints and TensorBoard 
               metrics.
             save_checkpoint_epochs: The number of epochs to wait before saving
-              a new checkpoint. N.B. that this does not affect TensorBoard 
+              a new checkpoint. Note that this does not affect TensorBoard 
               logging frequency.
             device: The device to place the model and data batches on.
         """

@@ -68,7 +68,7 @@ def load_image(path, size=None, remove_alpha_channel=True):
   return image
   
 
-def imshow(batch_or_tensor, title=None, figsize=None):
+def imshow(batch_or_tensor, title=None, figsize=None, **kwargs):
   """Renders tensors as an image using Matplotlib.
 
   Args:
@@ -77,6 +77,7 @@ def imshow(batch_or_tensor, title=None, figsize=None):
       rendered.
     title: The title for the rendered image. Passed to Matplotlib.
     figsize: The size (in inches) for the image. Passed to Matplotlib.
+    **kwargs: Extra keyword arguments passed as pyplot.imshow(image, **kwargs).
   """
   batch = batch_or_tensor
   for _ in range(4 - batch.ndim):
@@ -88,7 +89,7 @@ def imshow(batch_or_tensor, title=None, figsize=None):
   plt.figure(figsize=figsize)
   plt.title(title)
   plt.axis('off')
-  plt.imshow(image)
+  plt.imshow(image, **kwargs)
 
 
 def animate(frames, figsize=None, fps=24):

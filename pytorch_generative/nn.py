@@ -82,7 +82,7 @@ class MaskedConv2d(nn.Conv2d):
                        [0 0 0]]                    [0 0 0]
   In [1], they refer to the left masks as 'type A' and right as 'type B'. 
 
-  N.B.: This layer does *not* implement autoregressive channel masking.
+  NOTE: This layer does *not* implement autoregressive channel masking.
   """
 
   def __init__(self, is_causal, *args, **kwargs):
@@ -240,7 +240,7 @@ class _UnnormalizedLinearMaskedAttention(autograd.Function):
 class LinearMaskedAttention(nn.Module):
   """Memory efficient implementation of MaskedAttention as introduced in [3].
 
-  N.B.: LinearMaskedAttention is *much* slower than MaskedAttention and should
+  NOTE: LinearMaskedAttention is *much* slower than MaskedAttention and should
   only be used if your model cannot fit in memory.
 
   This implementation only requiers O(N) memory (instead of O(N^2)) for a

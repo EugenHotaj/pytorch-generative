@@ -4,13 +4,12 @@ PixelSNAIL extends PixelCNN [2] (and its variants) by introducing a causally
 masked attention layer. This layer extends the model's receptive field by 
 allowing each pixel to explicitly depend on all previous pixels. PixelCNN's
 receptive field, on the other hand, can only be increased by using deeper 
-networks with more convolutions. The attention block also naturally resolves 
-the blind spot issue which PixelCNN suffers from without needing a complex two 
-stream architecture.
+networks. The attention block also naturally resolves the blind spot in PixelCNN
+without needing a complex two stream architecture.
 
-Unlike [1], we use skip connections from each PixelSNAILBlock to the output.
-We find that this greatly stabilizes the model during training and gets rid of
-exploding gradient issues. It also massively speeds up convergence.
+NOTE: Unlike [1], we use skip connections from each PixelSNAILBlock to the 
+output. We find that this greatly stabilizes the model during training and gets
+rid of exploding gradient issues. It also massively speeds up convergence.
 
 References (used throughout the code):
   [1]: https://arxiv.org/abs/1712.09763

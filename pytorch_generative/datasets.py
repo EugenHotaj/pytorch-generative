@@ -23,7 +23,7 @@ class BinarizedMNIST(vision.VisionDataset):
   Originally used in Salakhutdinov & Murray (2008). This dataset is used to 
   evaluate generative models of images, so labels are not provided. 
   
-  N.B. The evaluation split is merged into the training set.
+  NOTE: The evaluation split is merged into the training set.
   """
 
   _URL = ('http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/'

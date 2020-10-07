@@ -1,20 +1,25 @@
 """Implementation of the Gated PixelCNN [1].
 
-TODO(eugenhotaj): describe.
+Gated PixelCNN extends the original PixelCNN [2] by incorporating ideas 
+motivated by the more effective PixelRNNs. The first extension is to use
+GatedActivations (instead of ReLUs) to mimic the gated functions in RNN. The
+second extension is to use a two-stream architecture to mitigate the blind spot
+introduced by autoregressively masking convolution filters.
 
-We follow the implementation in [2] but use a casually masked GatedPixelCNNLayer
+We follow the implementation in [3] but use a casually masked GatedPixelCNNLayer
 for the input instead of a causally masked Conv2d layer. For efficiency, the 
 masked Nx1 and 1xN convolutions are implemented via unmasked (N//2+1)x1 and
 1x(N//2+1) convolutions with padding and cropping, as suggested in [1].
 
 NOTE: Our implementaiton does *not* use autoregressive channel masking. This
-means that each output depends on whole pixels and not sub-pixels. For outputs
-with multiple channels, other methods can be used, e.g. [3]. 
+means that each output depends on whole pixels not sub-pixels. For outputs with
+multiple channels, other methods can be used, e.g. [4]. 
 
 References (used throughout the code):
   [1]: https://arxiv.org/abs/1606.05328
-  [2]: http://www.scottreed.info/files/iclr2017.pdf
-  [3]: https://arxiv.org/abs/1701.05517
+  [2]: https://arxiv.org/abs/1601.06759
+  [3]: http://www.scottreed.info/files/iclr2017.pdf
+  [4]: https://arxiv.org/abs/1701.05517
 """
 
 import torch
@@ -27,8 +32,6 @@ from pytorch_generative.models import base
 
 class GatedPixelCNNLayer(nn.Module):
   """A Gated PixelCNN layer.
-
-  N.B.: This layer does *not* implement autoregressive channel masking.
 
   The layer takes as input 'vstack' and 'hstack' from previous 
   'GatedPixelCNNLayers' and returns 'vstack', 'hstack', 'skip' where 'skip' is

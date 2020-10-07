@@ -1,12 +1,12 @@
 """Implementation of Masked Autoencoder Distribution Estimator (MADE) [1].
 
-MADE is an extension of NADE [2] which allows using arbitrary depth fully 
+MADE is an extension of NADE [2] which allows using arbitrarily deep fully 
 connected networks as the distribution estimator. More specifically, MADE is a
-deep, fully-connected autoencoder which is masked to respect the autoregressive 
-property. For any ordering of the input features, MADE only uses features j<i 
-to predict feature i. This property allows MADE to be used as a generative model
-by specifically modelling P(X) = \prod_i^D p(X_i|X_{j<i}) where X is an input
-feature and D is the dimensionality of X. For full details, see [1].
+deep, fully-connected autoencoder masked to respect the autoregressive property.
+For any ordering of the input features, MADE only uses features j<i to predict 
+feature i. This property allows MADE to be used as a generative model by 
+specifically modelling P(X) = \prod_i^D p(X_i|X_{j<i}) where X is an input
+feature and D is the dimensionality of X.
 
 [1]: https://arxiv.org/abs/1502.03509
 [2]: https://arxiv.org/abs/1605.02226

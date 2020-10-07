@@ -324,8 +324,8 @@ class VectorQuantizer(nn.Module):
         affect the capacity in the information bottleneck.
       commitment_loss_weight: The weight applied to the commitment loss (i.e. 
         the loss is incurred by the encoder for commiting to a particular
-        representaiton, Beta in equation 4 of [x]). Should be set so that 
-        the comitment loss is on the same scale as the reconstruction loss.
+        representaiton). Should be set so that the comitment loss is on the same
+        scale as the reconstruction loss.
     """
     super().__init__()
     self.n_embeddings = n_embeddings

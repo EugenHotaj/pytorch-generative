@@ -115,9 +115,11 @@ class ImageGPT(nn.Module):
  We train most algorithms on [Binarized Mnist](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) 
  and either match or surpass the relevant papers.
 
+*Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
+
 ### Autoregressive Generative Models
 
-Binary MNIST (NLL): 
+Binarized MNIST (NLL): 
 
 | Algorithm | Our Results | Paper Results | Links |
 | --- | ---| --- | --- |
@@ -128,7 +130,14 @@ Binary MNIST (NLL):
 | MADE | 84.87 | 88.04 ([paper](https://arxiv.org/abs/1502.03509)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py) |
 | NADE | 85.65 | 88.86 ([paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py) |
 
-*Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
+### Variational Autoencoders
+
+Binarized MNIST (NLL):
+
+| Algorithm | Our Results | Paper Results | Links |
+| --- | ---| --- | --- |
+| VQ-VAE | TODO | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py) |
+
 
 ### Neural Style Transfer
 Blog: https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489 <br>

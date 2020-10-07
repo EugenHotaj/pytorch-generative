@@ -10,20 +10,21 @@ from pytorch_generative import models
 
 class ModelSmokeTestCase(unittest.TestCase):
 
-  def _smoke_test(self, model, in_channels=1):
+  def _smoke_test(self, model, in_channels=1, test_sampling=True):
     shape = (2, in_channels, 5, 5)
     
     # Test forward().
     batch = torch.rand(shape)
     model(batch)
 
-    # Test unconditional sample().
-    model.sample(out_shape=shape)
+    if test_sampling:
+      # Test unconditional sample().
+      model.sample(out_shape=shape)
 
-    # Test that conditional sample() only modifies pixels < 0.
-    batch[:, :, 1:, :] = -1
-    sample = model.sample(conditioned_on=batch)
-    self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
+      # Test that conditional sample() only modifies pixels < 0.
+      batch[:, :, 1:, :] = -1
+      sample = model.sample(conditioned_on=batch)
+      self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
 
   # TODO(eugenhotaj): Use parameterized tests instead of creating a new method
   # for each model.
@@ -74,3 +75,14 @@ class ModelSmokeTestCase(unittest.TestCase):
                             n_attention_heads=2,
                             n_embedding_channels=4)
     self._smoke_test(model, in_channels=3)
+
+  def test_VQVAE(self):
+    model = models.VQVAE(in_channels=3,
+                         out_channels=3,
+                         hidden_channels=2,
+                         residual_hidden_channels=1,
+                         n_residual_blocks=1,
+                         n_embeddings=2,
+                         embedding_dim=2,
+                         commitment_loss_weight=1.)
+    self._smoke_test(model, in_channels=3, test_sampling=False)

@@ -152,7 +152,8 @@ class MaskedAttention(nn.Module):
                          out_channels=self._embed_channels + self._out_channels, 
                          kernel_size=1)
     # TODO(eugenhotaj): Should we only project if n_heads > 1?
-    self._proj = nn.Conv2d(in_channels=out_channels, out_channels=out_channels,
+    self._proj = nn.Conv2d(in_channels=self._out_channels, 
+                           out_channels=self._out_channels,
                            kernel_size=1) 
 
   def forward(self, x, extra_x=None):

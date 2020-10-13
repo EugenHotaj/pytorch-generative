@@ -23,7 +23,7 @@ class AutoregressiveModel(nn.Module):
     self._sample_fn = sample_fn or _default_sample_fn
 
   def _get_conditioned_on(self, out_shape, conditioned_on):
-    assert out_shape is None or conditioned_on is None, \
+    assert out_shape is not None or conditioned_on is not None, \
       'Must provided one, and only one of "out_shape" or "conditioned_on"'
     if conditioned_on is None:
       device = next(self.parameters()).device

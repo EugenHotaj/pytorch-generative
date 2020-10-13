@@ -83,6 +83,5 @@ class ModelSmokeTestCase(unittest.TestCase):
                          residual_hidden_channels=1,
                          n_residual_blocks=1,
                          n_embeddings=2,
-                         embedding_dim=2,
-                         commitment_loss_weight=1.)
+                         embedding_dim=2)
     self._smoke_test(model, in_channels=3, test_sampling=False)

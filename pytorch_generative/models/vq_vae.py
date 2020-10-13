@@ -65,8 +65,7 @@ class VQVAE(nn.Module):
                residual_hidden_channels=32,
                n_residual_blocks=2,
                n_embeddings=128,
-               embedding_dim=16,
-               commitment_loss_weight=1.):
+               embedding_dim=16):
     """Initializes a new VQVAE instance.
     
     Args:
@@ -77,8 +76,6 @@ class VQVAE(nn.Module):
       n_residual_blocks: Number of ResidualBlocks in encoder/decoder stacks.
       n_embeddings: Number of vectors to use in the quantizaiton dictionary. 
       embedding_dim: Dimension of each quantization vector.
-      commitment_loss_weight: The weight applied to the encoder's commitment
-        loss. See VectorQuantizer for details.
     """
     super().__init__()
     self._encoder = nn.Sequential(
@@ -96,8 +93,7 @@ class VQVAE(nn.Module):
     self._quantizer = nn.Sequential(
         nn.Conv2d(in_channels=hidden_channels, out_channels=embedding_dim,
                   kernel_size=1),
-        pg_nn.VectorQuantizer(
-          n_embeddings, embedding_dim, commitment_loss_weight))
+        pg_nn.VectorQuantizer(n_embeddings, embedding_dim))
     self._decoder = nn.Sequential(
         nn.Conv2d(in_channels=embedding_dim, out_channels=hidden_channels,
                 kernel_size=3, padding=1),

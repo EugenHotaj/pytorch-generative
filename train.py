@@ -15,10 +15,12 @@ import pytorch_generative as pg
 
 MODEL_MAP = {	
     'gated_pixel_cnn': pg.models.GatedPixelCNN,	
+    'image_gpt': pg.models.ImageGPT,
     'made': pg.models.MADE,	
     'nade': pg.models.NADE,	
     'pixel_cnn': pg.models.PixelCNN,	
     'pixel_snail': pg.models.PixelSNAIL,	
+    'vq_vae': pg.models.VQVAE,
     'tiny_cnn': pg.models.TinyCNN,	
 }	
 
@@ -35,11 +37,11 @@ def main(args):
           datasets.MNIST('./data', train=False, download=True, transform=transform),	
           batch_size=args.batch_size)	
 
-  model = MODEL_MAP[args.model](in_channels=1)	
+  model = MODEL_MAP[args.model](in_channels=1, out_channels=1)	
   optimizer = optim.Adam(model.parameters())	
   scheduler = lr_scheduler.MultiplicativeLR(optimizer, lambda _: 0.9984)	
 
-  criterion = nn.BCELoss(reduction='none')	
+  criterion = nn.BCEWithLogitsLoss(reduction='none')	
   def loss_fn(x, _, preds):	
     batch_size = x.shape[0]	
     x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))	

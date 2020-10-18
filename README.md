@@ -132,11 +132,10 @@ Binarized MNIST (NLL):
 
 ### Variational Autoencoders
 
-Binarized MNIST (NLL):
-
 | Algorithm | Our Results | Paper Results | Links |
 | --- | ---| --- | --- |
 | VQ-VAE | TODO | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py) |
+| VQ-VAE-2 | TODO | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py) |
 
 
 ### Neural Style Transfer

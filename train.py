@@ -21,6 +21,7 @@ MODEL_MAP = {
     'pixel_cnn': pg.models.PixelCNN,	
     'pixel_snail': pg.models.PixelSNAIL,	
     'vq_vae': pg.models.VQVAE,
+    'vq_vae_2': pg.models.VQVAE2,
     'tiny_cnn': pg.models.TinyCNN,	
 }	
 

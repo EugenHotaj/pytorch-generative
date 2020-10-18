@@ -80,8 +80,19 @@ class ModelSmokeTestCase(unittest.TestCase):
     model = models.VQVAE(in_channels=3,
                          out_channels=3,
                          hidden_channels=2,
-                         residual_hidden_channels=1,
                          n_residual_blocks=1,
+                         residual_channels=1,
+                         n_embeddings=2,
+                         embedding_dim=2)
+    self._smoke_test(model, in_channels=3, test_sampling=False)
+
+
+  def test_VQVAE2(self):
+    model = models.VQVAE(in_channels=3,
+                         out_channels=3,
+                         hidden_channels=2,
+                         n_residual_blocks=1,
+                         residual_channels=1,
                          n_embeddings=2,
                          embedding_dim=2)
     self._smoke_test(model, in_channels=3, test_sampling=False)

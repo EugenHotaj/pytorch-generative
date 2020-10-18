@@ -13,6 +13,7 @@ from pytorch_generative.models.nade import NADE
 from pytorch_generative.models.pixel_cnn import PixelCNN
 from pytorch_generative.models.pixel_snail import PixelSNAIL
 from pytorch_generative.models.vq_vae import VQVAE
+from pytorch_generative.models.vq_vae import VQVAE2
 
 
 class TinyCNN(base.AutoregressiveModel):
@@ -49,5 +50,6 @@ __all__ = [
     'PixelCNN', 
     'PixelSNAIL', 
     'VQVAE',
+    'VQVAE2',
     'TinyCNN'
 ]

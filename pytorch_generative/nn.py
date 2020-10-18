@@ -356,5 +356,3 @@ class VectorQuantizer(nn.Module):
     loss = F.mse_loss(quantized, x.detach()) + F.mse_loss(quantized.detach(), x)
     quantized = x + (quantized - x).detach()  # Straight through estimator.
     return quantized, loss
-
-

@@ -275,7 +275,10 @@ class VQVAE2(nn.Module):
     self._quantizer_b = Quantizer(in_channels=2*hidden_channels, 
                                   n_embeddings=n_embeddings, 
                                   embedding_dim=embedding_dim)
-    self._decoder_b = Decoder(in_channels=hidden_channels + embedding_dim,
+    self._upsampler_t = nn.ConvTranspose2d(
+        in_channels=embedding_dim, out_channels=embedding_dim, kernel_size=4,
+        stride=2, padding=1)
+    self._decoder_b = Decoder(in_channels=2*embedding_dim,
                               out_channels=out_channels,
                               hidden_channels=hidden_channels,
                               n_residual_blocks=n_residual_blocks,
@@ -291,6 +294,7 @@ class VQVAE2(nn.Module):
     quantized_b, loss_b = self._quantizer_b(torch.cat((encoded_b, decoded_t),
                                             dim=1))
 
-    xhat = self._decoder_b(torch.cat((decoded_t, quantized_b), dim=1))
+    quantized_t = self._upsampler(quantized_t)
+    xhat = self._decoder_b(torch.cat((quantized_b, quantized_t), dim=1))
     return xhat, loss_b + loss_t
 

@@ -306,13 +306,13 @@ class LinearMaskedAttention(nn.Module):
     return out.transpose(2, 3).contiguous().view(n, -1, h, w)
 
 
-# TODO(eugenhotaj): It's a little strange that this module computes and returns
-# a loss since the embeddings can be trained in other ways (e.g. EMA). From 
-# an API perspective, it might make more sense to let the user compute the loss.
+# TODO(eugenhotaj): It's strange that this module returns a loss.
 class VectorQuantizer(nn.Module):
-  """A vector quantizer as introduced in [x].
+  """A vector quantizer as introduced in [4].
   
-  Inputs are quantized to the closest embedding in Euclidian distance.
+  Inputs are quantized to the closest embedding in Euclidian distance. The 
+  embeddings can be updated using either exponential moving averages or gradient
+  descent.
   """
 
   def __init__(self, n_embeddings, embedding_dim, use_ema=True, ema_decay=.99):
@@ -365,8 +365,9 @@ class VectorQuantizer(nn.Module):
     quantized = (one_hot @ self._embedding)
     quantized = quantized.view(n, h, w, c).permute(0, 3, 1, 2).contiguous()
 
-    # Compute loss and update embedding and EMA parameters if necessary.
-    loss = F.mse_loss(x, quantized.detach()) # Commitment loss.
+    # NOTE: Most implementations weight the commitment loss by some constant
+    # given by the user. However, we find a weight of 1 is quite robust.
+    loss = F.mse_loss(x, quantized.detach())  # Commitment loss.
     if self._use_ema and self.training:
       batch_cluster_size = one_hot.sum(axis=0)
       batch_embedding_avg = (flat_x.t() @ one_hot).t()

@@ -375,7 +375,7 @@ class VectorQuantizer(nn.Module):
                                                      alpha=1 - self._decay)
       self._embedding_avg.data.mul_(self._decay).add_(batch_embedding_avg,
                                                       alpha=1 - self._decay)
-      new_emb = self._embedding_avg / (self._cluster_size + 1e-6).unsqueeze(1)
+      new_emb = self._embedding_avg / (self._cluster_size + 1e-5).unsqueeze(1)
       self._embedding.data.copy_(new_emb)
     elif not self._use_ema:
       # Add the embedding loss when not using EMA.

@@ -256,7 +256,7 @@ class VQVAE2(nn.Module):
                               hidden_channels=hidden_channels,
                               n_residual_blocks=n_residual_blocks,
                               residual_channels=residual_channels, 
-                              stride=4)
+                              stride=2)
     self._encoder_t = Encoder(in_channels=hidden_channels,
                               out_channels=hidden_channels, 
                               hidden_channels=hidden_channels,
@@ -266,35 +266,33 @@ class VQVAE2(nn.Module):
     self._quantizer_t = Quantizer(in_channels=hidden_channels, 
                                   n_embeddings=n_embeddings, 
                                   embedding_dim=embedding_dim)
+    self._quantizer_b = Quantizer(in_channels=hidden_channels, 
+                                  n_embeddings=n_embeddings, 
+                                  embedding_dim=embedding_dim)
     self._decoder_t = Decoder(in_channels=embedding_dim,
                               out_channels=hidden_channels,
                               hidden_channels=hidden_channels,
                               n_residual_blocks=n_residual_blocks,
                               residual_channels=residual_channels,
                               stride=2)
-    self._quantizer_b = Quantizer(in_channels=2*hidden_channels, 
-                                  n_embeddings=n_embeddings, 
-                                  embedding_dim=embedding_dim)
-    self._upsampler_t = nn.ConvTranspose2d(
-        in_channels=embedding_dim, out_channels=embedding_dim, kernel_size=4,
-        stride=2, padding=1)
+    self._conv = nn.Conv2d(in_channels=in_channels, out_channels=embedding_dim,
+                          kernel_size=1)
     self._decoder_b = Decoder(in_channels=2*embedding_dim,
                               out_channels=out_channels,
                               hidden_channels=hidden_channels,
                               n_residual_blocks=n_residual_blocks,
                               residual_channels=residual_channels,
-                              stride=4) 
+                              stride=2) 
     
   def forward(self, x):
     encoded_b = self._encoder_b(x)
     encoded_t = self._encoder_t(encoded_b)
 
-    quantized_t, loss_t = self._quantizer_t(encoded_t)
-    decoded_t = self._decoder_t(quantized_t)
-    quantized_b, loss_b = self._quantizer_b(torch.cat((encoded_b, decoded_t),
-                                            dim=1))
+    quantized_t, vq_loss_t = self._quantizer_t(encoded_t)
+    quantized_b, vq_loss_b = self._quantizer_b(encoded_b)
 
-    quantized_t = self._upsampler(quantized_t)
-    xhat = self._decoder_b(torch.cat((quantized_b, quantized_t), dim=1))
-    return xhat, loss_b + loss_t
+    decoded_t = self._decoder_t(quantized_t)
+    xhat = self._decoder_b(
+        torch.cat((self._conv(decoded_t), quantized_b), dim=1))
+    return xhat, .5 * (vq_loss_b + vq_loss_t) + F.mse_loss(decoded_t, encoded_b)
 

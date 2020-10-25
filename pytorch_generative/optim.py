@@ -4,6 +4,10 @@ References (used throughout the code):
   [1]: https://arxiv.org/abs/2010.07468
 """
 
+import torch
+from torch import optim
+
+
 class AdaBelief(optim.Optimizer):
     """Implementation of the AdaBelief algorithm proposed in [1].
 
@@ -36,7 +40,7 @@ class AdaBelief(optim.Optimizer):
           if param.grad is None:
             continue
           grad = param.grad.data
-          assert not grad.is_sparse, 'AdaBelief does not support sparse gradients'
+          assert not grad.is_sparse, 'AdaBelief does not support sparse gradients.'
           
           # Create the state if this is the first step.
           state = self.state[param]

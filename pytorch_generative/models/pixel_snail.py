@@ -129,7 +129,6 @@ class PixelSNAIL(base.AutoregressiveModel):
                n_residual_blocks=2,
                attention_key_channels=4,
                attention_value_channels=32,
-               head_channels=1,
                sample_fn=None):
     """Initializes a new PixelSNAIL instance.
 
@@ -163,8 +162,8 @@ class PixelSNAIL(base.AutoregressiveModel):
     ])
     self._output = nn.Sequential(
         nn.Conv2d(
-          in_channels=n_channels, out_channels=head_channels, kernel_size=1),
-        nn.Conv2d(in_channels=head_channels, 
+          in_channels=n_channels, out_channels=n_channels//2, kernel_size=1),
+        nn.Conv2d(in_channels=n_channels//2, 
                   out_channels=out_channels, 
                   kernel_size=1))
 

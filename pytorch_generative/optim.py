@@ -17,7 +17,7 @@ class AdaBelief(optim.Optimizer):
   AdaBelief can be viewed as a variation on the Adam optimizer where the running
   second moment of the gradient is replaced by the running variance of the 
   gradient. The running variance can be interpreted as the error of estimating
-  the gradient by the running mean  and is used to appropriately scale the step
+  the gradient by the running mean and is used to appropriately scale the step
   size. A small error indicates a strong belief in the observation of the 
   gradient and justififies a large step size (and vice versa).
 

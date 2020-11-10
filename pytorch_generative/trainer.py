@@ -24,7 +24,7 @@ class Trainer:
                  lr_scheduler=None,
                  log_dir='/tmp/runs',
                  save_checkpoint_epochs=1,
-                 device=None):
+                 device='cpu'):
         """Initializes a new Trainer instance.
         
         Args:
@@ -43,8 +43,8 @@ class Trainer:
             save_checkpoint_epochs: The number of epochs to wait before saving
               a new checkpoint. Note that this does not affect TensorBoard 
               logging frequency.
-            device: The device to place the model and data batches on. Defaults
-              to CPU.
+            device: The device to place the model and data. Either string or
+              torch.device.
         """
         # Stateful objects that need to be saved.
         self._model = model.to(device)
@@ -56,7 +56,7 @@ class Trainer:
         self._eval_loader = eval_loader
         self._log_dir = log_dir
         self._save_checkpoint_epochs = save_checkpoint_epochs
-        self._device = device or torch.device('cpu')
+        self._device = torch.device(device) if isinstance(device, str) else device
 
         self._step = 0
         self._epoch = 0

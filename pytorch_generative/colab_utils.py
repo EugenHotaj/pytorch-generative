@@ -4,6 +4,7 @@ Warning: This module must be imported from Colab, otherwise it will crash.
 """
 
 import collections
+import gc
 import time
 import os
 
@@ -27,6 +28,17 @@ _IMAGE_UNLOADER = transforms.Compose([
 def get_device():
   """Returns the appropriate device depending on what's available."""
   return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def try_del_vars(*names):
+  """Deletes the global variables with the given names if they exist."""
+  names = names or ["model", "optimizer", "model_trainer"]
+  for name in names:
+    if name in globals():
+      del globals()[name]
+    if name in locals():
+      del locals()[name]
+  gc.collect()
 
 
 def upload_files():

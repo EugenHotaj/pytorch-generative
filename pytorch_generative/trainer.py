@@ -2,6 +2,7 @@
 
 import collections
 import os 
+import tempfile
 import time
 
 import torch
@@ -55,7 +56,7 @@ class Trainer:
         self._loss_fn = loss_fn
         self._train_loader = train_loader
         self._eval_loader = eval_loader
-        self._log_dir = log_dir or tempfile.mkdtemp
+        self._log_dir = log_dir or tempfile.mkdtemp()
         self._save_checkpoint_epochs = save_checkpoint_epochs
         self._device = torch.device(device) if isinstance(device, str) else device
 

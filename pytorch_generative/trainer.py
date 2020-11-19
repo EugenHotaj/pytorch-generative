@@ -22,7 +22,7 @@ class Trainer:
                  train_loader, 
                  eval_loader,
                  lr_scheduler=None,
-                 log_dir='/tmp/runs',
+                 log_dir=None,
                  save_checkpoint_epochs=1,
                  device='cpu'):
         """Initializes a new Trainer instance.
@@ -39,7 +39,8 @@ class Trainer:
             lr_scheduler: A lr_scheduler whose step() method is called after 
               every batch.
             log_dir: The directory where to log checkpoints and TensorBoard 
-              metrics.
+              metrics. If 'None' a temporary directory is created (note that 
+              this directory is not cleaned up automatically).
             save_checkpoint_epochs: The number of epochs to wait before saving
               a new checkpoint. Note that this does not affect TensorBoard 
               logging frequency.
@@ -54,7 +55,7 @@ class Trainer:
         self._loss_fn = loss_fn
         self._train_loader = train_loader
         self._eval_loader = eval_loader
-        self._log_dir = log_dir
+        self._log_dir = log_dir or tempfile.mkdtemp
         self._save_checkpoint_epochs = save_checkpoint_epochs
         self._device = torch.device(device) if isinstance(device, str) else device
 

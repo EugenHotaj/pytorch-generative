@@ -59,12 +59,11 @@ class ModelSmokeTestCase(unittest.TestCase):
   def test_PixelSNAIL(self):
     model = models.PixelSNAIL(in_channels=3,
                               out_channels=3,
-                              n_channels=1,
+                              n_channels=2,
                               n_pixel_snail_blocks=1,
                               n_residual_blocks=1,
                               attention_key_channels=1,
-                              attention_value_channels=1,
-                              head_channels=1)
+                              attention_value_channels=1)
     self._smoke_test(model, in_channels=3) 
 
   def test_ImageGPT(self):

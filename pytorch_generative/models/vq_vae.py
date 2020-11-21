@@ -102,12 +102,12 @@ class Encoder(nn.Module):
                     stride=2, padding=1))
       net.append(nn.ReLU())
     net.append(
-        nn.Conv2d(in_channels=hidden_channels, out_channels=hidden_channels,
-                  kernel_size=3, padding=1))
-    net.append(
-        ResidualStack(n_channels=out_channels,
+        ResidualStack(n_channels=hidden_channels,
                       hidden_channels=residual_channels,
                       n_residual_blocks=n_residual_blocks))
+    net.append(
+        nn.Conv2d(in_channels=hidden_channels, out_channels=out_channels,
+                  kernel_size=3, padding=1))
     self._net = nn.Sequential(*net)
 
   def forward(self, x):

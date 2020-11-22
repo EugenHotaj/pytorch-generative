@@ -12,6 +12,7 @@ from pytorch_generative.models.made import MADE
 from pytorch_generative.models.nade import NADE
 from pytorch_generative.models.pixel_cnn import PixelCNN
 from pytorch_generative.models.pixel_snail import PixelSNAIL
+from pytorch_generative.models.vae import VAE
 from pytorch_generative.models.vq_vae import VQVAE
 from pytorch_generative.models.vq_vae import VQVAE2
 
@@ -49,6 +50,7 @@ __all__ = [
     'NADE',
     'PixelCNN', 
     'PixelSNAIL', 
+    'VAE',
     'VQVAE',
     'VQVAE2',
     'TinyCNN'

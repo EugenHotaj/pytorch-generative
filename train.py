@@ -20,6 +20,7 @@ MODEL_MAP = {
     'nade': pg.models.NADE,	
     'pixel_cnn': pg.models.PixelCNN,	
     'pixel_snail': pg.models.PixelSNAIL,	
+    'vae': pg.models.VAE,
     'vq_vae': pg.models.VQVAE,
     'vq_vae_2': pg.models.VQVAE2,
     'tiny_cnn': pg.models.TinyCNN,	

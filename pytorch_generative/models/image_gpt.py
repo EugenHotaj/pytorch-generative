@@ -78,7 +78,6 @@ class ImageGPT(base.AutoregressiveModel):
       in_channels: The number of input channels.
       out_channels: The number of output channels.
       in_size: Size of the input images. Used to create positional encodings.
-      probs_fn: See the base class.
       n_transformer_blocks: Number of TransformerBlocks to use.
       n_attention_heads: Number of attention heads to use.
       n_embedding_channels: Number of attention embedding channels to use.

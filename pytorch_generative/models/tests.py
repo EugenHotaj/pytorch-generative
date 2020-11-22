@@ -68,13 +68,25 @@ class ModelSmokeTestCase(unittest.TestCase):
 
   def test_ImageGPT(self):
     model = models.ImageGPT(in_channels=3,
-                            in_size=5,
                             out_channels=3,
+                            in_size=5,
                             n_transformer_blocks=1,
                             n_attention_heads=2,
                             n_embedding_channels=4)
     self._smoke_test(model, in_channels=3)
 
+  def test_VAE(self):
+    model = models.VAE(in_channels=3,
+                       out_channels=3,
+                       in_size=5,
+                       latent_dim=1,
+                       hidden_channels=2,
+                       n_residual_blocks=1,
+                       residual_channels=1)
+    self._smoke_test(model, in_channels=3, test_sampling=False)
+    # TODO(eugenhotaj): Create a function to test VAEs sampling.
+    model.sample(n_images=2)
+    
   def test_VQVAE(self):
     model = models.VQVAE(in_channels=3,
                          out_channels=3,
@@ -84,7 +96,6 @@ class ModelSmokeTestCase(unittest.TestCase):
                          n_embeddings=2,
                          embedding_dim=2)
     self._smoke_test(model, in_channels=3, test_sampling=False)
-
 
   def test_VQVAE2(self):
     model = models.VQVAE(in_channels=3,

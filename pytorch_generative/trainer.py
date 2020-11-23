@@ -216,11 +216,11 @@ class Trainer:
         loss = {key: loss / total_examples for key, loss in total_loss.items()}
         self._log_loss_dict(loss, training=False)
 
+        self._epoch += 1
+        self._save_checkpoint()
         if self._sample_epochs and self._epoch % self._sample_epochs == 0:
           tensor = self._sample_fn(self._model) 
           self._summary_writer.add_images('sample', tensor, self._step)
 
-        self._epoch += 1
-        self._save_checkpoint()
       self._summary_writer.close()
 

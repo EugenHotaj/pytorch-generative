@@ -22,29 +22,36 @@ class Trainer:
                  optimizer, 
                  train_loader, 
                  eval_loader,
+                 save_checkpoint_epochs=1,
+                 sample_epochs=None,
+                 sample_fn=None,
                  lr_scheduler=None,
                  log_dir=None,
-                 save_checkpoint_epochs=1,
                  device='cpu'):
         """Initializes a new Trainer instance.
         
         Args:
-            model: The model to train and evaluate.
-            loss_fn: A fn(inputs, targets, predictions)->output. The output
+            model: Model to train and evaluate.
+            loss_fn: A `fn(inputs, targets, predictions)->output`. The output
               can either be a single loss Tensor or a dictionary containing 
-              multiple loss Tensors. The dictionary must contain a "loss" key 
+              multiple loss Tensors. The dictionary must contain a `loss` key 
               which will be used as the primary loss for backprop.
-            optimizer: The optimizer to use when training.
-            train_loader: A DataLoader for the training set.
-            eval_loader: A DataLoader for the evaluation set.
-            lr_scheduler: A lr_scheduler whose step() method is called after 
-              every batch.
+            optimizer: Optimizer to use when training.
+            train_loader: DataLoader for the training set.
+            eval_loader: DataLoader for the evaluation set.
+            save_checkpoint_epochs: Number of epochs to wait between
+              checkpoints. Note that this does not affect TensorBoard logging
+              frequency.
+            sample_epochs: Number of epochs to wait between generating new
+              image samples and logging them to TensorBoard. If not `None`, 
+              `sample_fn` must be provided.
+            sample_fn: A `fn(model)->Tensor` which returns an NCHW Tensor of
+              images to log to TensorBoard.
+            lr_scheduler: An torch.optim.lr_scheduler whose step() method is
+              called after every batch.
             log_dir: The directory where to log checkpoints and TensorBoard 
               metrics. If 'None' a temporary directory is created (note that 
               this directory is not cleaned up automatically).
-            save_checkpoint_epochs: The number of epochs to wait before saving
-              a new checkpoint. Note that this does not affect TensorBoard 
-              logging frequency.
             device: The device to place the model and data. Either string or
               torch.device.
         """
@@ -59,6 +66,12 @@ class Trainer:
         self._log_dir = log_dir or tempfile.mkdtemp()
         self._save_checkpoint_epochs = save_checkpoint_epochs
         self._device = torch.device(device) if isinstance(device, str) else device
+
+        self._sample_epochs = sample_epochs
+        self._sample_fn = sample_fn
+        if self._sample_epochs:
+          msg =  'sample_fn cannot be None if sample_epochs is not None'
+          assert self._sample_fn, msg
 
         self._step = 0
         self._epoch = 0
@@ -140,7 +153,10 @@ class Trainer:
       return {k: v.item() for k, v in loss.items()}
 
     def eval_one_batch(self, x, y):
-      """Evaluates the model on a single batch of examples."""
+      """Evaluates the model on a single batch of examples.
+
+      Subclasses can override this method to define custom evaluation loops.
+      """
       preds = self._model(x)
       loss = self._loss_fn(x, y, preds)
       return loss
@@ -176,11 +192,11 @@ class Trainer:
           self._time_taken += time.time() - start_time
           start_time = time.time()
           self._summary_writer.add_scalar(
-              'perf/examples_per_sec', 
+              'speed/examples_per_sec', 
               self._examples_processed / self._time_taken, 
               self._step)
           self._summary_writer.add_scalar(
-              'perf/millis_per_example', 
+              'speed/millis_per_example', 
               self._time_taken / self._examples_processed * 1000, 
               self._step)
           self._summary_writer.add_scalar('progress/epoch', self._epoch, self._step)
@@ -200,6 +216,11 @@ class Trainer:
         loss = {key: loss / total_examples for key, loss in total_loss.items()}
         self._log_loss_dict(loss, training=False)
 
+        if self._sample_epochs and self._epoch % self._sample_epochs == 0:
+          tensor = self._sample_fn(model) 
+          self._summary_writer.add_images('sample', tensor, self._step)
+
         self._epoch += 1
         self._save_checkpoint()
       self._summary_writer.close()
+

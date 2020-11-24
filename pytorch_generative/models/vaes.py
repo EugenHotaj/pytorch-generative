@@ -2,6 +2,8 @@
 
 from torch import nn
 
+from pytorch_generative import nn as pg_nn
+
 
 class ResidualBlock(nn.Module):
   """A simple residual block."""
@@ -138,4 +140,27 @@ class Decoder(nn.Module):
 
   def forward(self, x):
     return self._net(x)
+
+
+class Quantizer(nn.Module):
+  """Wraps a VectorQuantizer to handle input with arbitrary channels."""
+
+  def __init__(self, in_channels, n_embeddings, embedding_dim):
+    """Initializes a new Quantizer instance.
+
+    Args:
+      in_channels: Number of input channels.
+      n_embeddings: Number of VectorQuantizer embeddings.
+      embedding_dim: VectorQuantizer embedding dimension.
+    """
+    super().__init__()
+    self._net = nn.Sequential(
+        nn.Conv2d(in_channels=in_channels, out_channels=embedding_dim,
+                  kernel_size=1),
+        pg_nn.VectorQuantizer(n_embeddings, embedding_dim))
+
+  def forward(self, x):
+    return self._net(x)
+
+
 

@@ -21,180 +21,186 @@ from pytorch_generative.models import base
 
 
 class MaskedLinear(nn.Linear):
-  """A Linear layer with masks that turn off some of the layer's weights."""
+    """A Linear layer with masks that turn off some of the layer's weights."""
 
-  def __init__(self, in_features, out_features, bias=True):
-    super().__init__(in_features, out_features, bias)
-    self.register_buffer('mask', torch.ones((out_features, in_features)))
+    def __init__(self, in_features, out_features, bias=True):
+        super().__init__(in_features, out_features, bias)
+        self.register_buffer("mask", torch.ones((out_features, in_features)))
 
-  def set_mask(self, mask):
-    self.mask.data.copy_(mask)
+    def set_mask(self, mask):
+        self.mask.data.copy_(mask)
 
-  def forward(self, x):
-    self.weight.data *= self.mask
-    return super().forward(x)
+    def forward(self, x):
+        self.weight.data *= self.mask
+        return super().forward(x)
 
 
 class MADE(base.AutoregressiveModel):
-  """The Masked Autoencoder Distribution Estimator (MADE) model."""
+    """The Masked Autoencoder Distribution Estimator (MADE) model."""
 
-  def __init__(self, input_dim, hidden_dims=None, n_masks=1):
-    """Initializes a new MADE instance.
-    
+    def __init__(self, input_dim, hidden_dims=None, n_masks=1):
+        """Initializes a new MADE instance.
+
+        Args:
+            input_dim: The dimensionality of the input.
+            hidden_dims: A list containing the number of units for each hidden layer.
+            n_masks: The total number of distinct masks to use during training/eval.
+        """
+        super().__init__()
+        self._input_dim = input_dim
+        self._dims = [self._input_dim] + (hidden_dims or []) + [self._input_dim]
+        self._n_masks = n_masks
+        self._mask_seed = 0
+
+        layers = []
+        for i in range(len(self._dims) - 1):
+            in_dim, out_dim = self._dims[i], self._dims[i + 1]
+            layers.append(MaskedLinear(in_dim, out_dim))
+            layers.append(nn.ReLU())
+        layers[-1] = nn.Sigmoid()  # Output is binary.
+        self._net = nn.Sequential(*layers)
+
+    def _sample_masks(self):
+        """Samples a new set of autoregressive masks.
+
+        Only 'self._n_masks' distinct sets of masks are sampled after which the mask
+        sets are rotated through in the order in which they were sampled. In
+        principle, it's possible to generate the masks once and cache them. However,
+        this can lead to memory issues for large 'self._n_masks' or models many
+        parameters. Finally, sampling the masks is not that computationally
+        expensive.
+
+        Returns:
+            A tuple of (masks, ordering). Ordering refers to the ordering of the outputs
+            since MADE is order agnostic.
+        """
+        rng = np.random.RandomState(seed=self._mask_seed % self._n_masks)
+        self._mask_seed += 1
+
+        # Sample connectivity patterns.
+        conn = [rng.permutation(self._input_dim)]
+        for i, dim in enumerate(self._dims[1:-1]):
+            # NOTE(eugenhotaj): The dimensions in the paper are 1-indexed whereas
+            # arrays in Python are 0-indexed. Implementation adjusted accordingly.
+            low = 0 if i == 0 else np.min(conn[i - 1])
+            high = self._input_dim - 1
+            conn.append(rng.randint(low, high, size=dim))
+        conn.append(np.copy(conn[0]))
+
+        # Create masks.
+        masks = [
+            conn[i - 1][None, :] <= conn[i][:, None] for i in range(1, len(conn) - 1)
+        ]
+        masks.append(conn[-2][None, :] < conn[-1][:, None])
+
+        return [torch.from_numpy(mask.astype(np.uint8)) for mask in masks], conn[-1]
+
+    def _forward(self, x, masks):
+        # If the input is an image, flatten it during the forward pass.
+        original_shape = x.shape
+        if len(original_shape) > 2:
+            x = x.view(original_shape[0], -1)
+
+        layers = [
+            layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)
+        ]
+        for layer, mask in zip(layers, masks):
+            layer.set_mask(mask)
+        return self._net(x).view(original_shape)
+
+    def forward(self, x):
+        """Computes the forward pass.
+
+        Args:
+            x: Either a tensor of vectors with shape (n, input_dim) or images with shape
+                (n, 1, h, w) where h * w = input_dim.
+        Returns:
+            The result of the forward pass.
+        """
+
+        masks, _ = self._sample_masks()
+        return self._forward(x, masks)
+
+    # TODO(eugenhotaj): It's kind of dumb to require an out_shape for
+    # non-convolutional models. We already know what the out_shape should be based
+    # on the model parameters.
+    def sample(self, out_shape=None, conditioned_on=None):
+        """See the base class."""
+        with torch.no_grad():
+            conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
+            out_shape = conditioned_on.shape
+            conditioned_on = conditioned_on.view(out_shape[0], -1)
+
+            masks, ordering = self._sample_masks()
+            ordering = np.argsort(ordering)
+            for dim in ordering:
+                out = self._forward(conditioned_on, masks)[:, dim]
+                out = distributions.Bernoulli(probs=out).sample()
+                conditioned_on[:, dim] = torch.where(
+                    conditioned_on[:, dim] < 0, out, conditioned_on[:, dim]
+                )
+            return conditioned_on.view(out_shape)
+
+
+def reproduce(
+    n_epochs=427, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
+):
+    """Training script with defaults to reproduce results.
+
+    The code inside this function is self contained and can be used as a top level
+    training script, e.g. by copy/pasting it into a Jupyter notebook.
+
     Args:
-      input_dim: The dimensionality of the input.
-      hidden_dims: A list containing the number of units for each hidden layer.
-      n_masks: The total number of distinct masks to use during training/eval.
+        n_epochs: Number of epochs to train for.
+        batch_size: Batch size to use for training and evaluation.
+        log_dir: Directory where to log trainer state and TensorBoard summaries.
+        device: Device to train on (either 'cuda' or 'cpu').
+        debug_loader: Debug DataLoader which replaces the default training and
+            evaluation loaders if not 'None'. Do not use unless you're writing unit
+            tests.
     """
-    super().__init__()
-    self._input_dim = input_dim
-    self._dims = [self._input_dim] + (hidden_dims or []) + [self._input_dim]
-    self._n_masks = n_masks
-    self._mask_seed = 0
+    from torch import optim
+    from torch import distributions
+    from torch.nn import functional as F
+    from torch.optim import lr_scheduler
+    from torch.utils import data
+    from torchvision import datasets
+    from torchvision import transforms
 
-    layers = []
-    for i in range(len(self._dims) - 1):
-      in_dim, out_dim = self._dims[i], self._dims[i + 1]
-      layers.append(MaskedLinear(in_dim, out_dim))
-      layers.append(nn.ReLU())
-    layers[-1] = nn.Sigmoid()  # Output is binary. 
-    self._net = nn.Sequential(*layers)
+    from pytorch_generative import trainer
+    from pytorch_generative import models
 
-  def _sample_masks(self):
-    """Samples a new set of autoregressive masks.
+    transform = transforms.Compose(
+        [transforms.ToTensor(), lambda x: distributions.Bernoulli(probs=x).sample()]
+    )
+    train_loader = debug_loader or data.DataLoader(
+        datasets.MNIST("/tmp/data", train=True, download=True, transform=transform),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=8,
+    )
+    test_loader = debug_loader or data.DataLoader(
+        datasets.MNIST("/tmp/data", train=False, download=True, transform=transform),
+        batch_size=batch_size,
+        num_workers=8,
+    )
 
-    Only 'self._n_masks' distinct sets of masks are sampled after which the mask
-    sets are rotated through in the order in which they were sampled. In 
-    principle, it's possible to generate the masks once and cache them. However,
-    this can lead to memory issues for large 'self._n_masks' or models many
-    parameters. Finally, sampling the masks is not that computationally 
-    expensive. 
+    model = models.MADE(input_dim=784, hidden_dims=[8000], n_masks=1)
+    optimizer = optim.Adam(model.parameters())
 
-    Returns:
-      A tuple of (masks, ordering). Ordering refers to the ordering of the 
-        outputs since MADE is order agnostic.
-    """
-    rng = np.random.RandomState(seed=self._mask_seed % self._n_masks)
-    self._mask_seed += 1
+    def loss_fn(x, _, preds):
+        batch_size = x.shape[0]
+        x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))
+        loss = F.binary_cross_entropy_with_logits(preds, x, reduction="none")
+        return loss.sum(dim=1).mean()
 
-    # Sample connectivity patterns.
-    conn = [rng.permutation(self._input_dim)]
-    for i, dim in enumerate(self._dims[1:-1]):
-      # NOTE(eugenhotaj): The dimensions in the paper are 1-indexed whereas 
-      # arrays in Python are 0-indexed. Implementation adjusted accordingly. 
-      low = 0 if i == 0 else np.min(conn[i - 1])
-      high = self._input_dim - 1
-      conn.append(rng.randint(low, high, size=dim))
-    conn.append(np.copy(conn[0]))
-
-    # Create masks.
-    masks = [conn[i - 1][None, :] <= conn[i][:, None] 
-             for i in range(1, len(conn) - 1 )]
-    masks.append(conn[-2][None, :] < conn[-1][:, None])
-
-    return [torch.from_numpy(mask.astype(np.uint8)) for mask in masks], conn[-1]
-
-  def _forward(self, x, masks): 
-    # If the input is an image, flatten it during the forward pass.
-    original_shape = x.shape
-    if len(original_shape) > 2:
-      x = x.view(original_shape[0], -1)
-
-    layers = [
-      layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)]
-    for layer, mask in zip(layers, masks):
-      layer.set_mask(mask)
-    return self._net(x).view(original_shape)
-
-  def forward(self, x):
-    """Computes the forward pass.
-
-    Args:
-      x: Either a tensor of vectors with shape (n, input_dim) or images with
-        shape (n, 1, h, w) where h * w = input_dim.
-    Returns:
-      The result of the forward pass.
-    """
-
-    masks, _ = self._sample_masks()
-    return self._forward(x, masks)
-
-  # TODO(eugenhotaj): It's kind of dumb to require an out_shape for 
-  # non-convolutional models. We already know what the out_shape should be based
-  # on the model parameters.
-  def sample(self, out_shape=None, conditioned_on=None):
-    """See the base class."""
-    with torch.no_grad():
-      conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
-      out_shape = conditioned_on.shape
-      conditioned_on = conditioned_on.view(out_shape[0], -1)
-
-      masks, ordering = self._sample_masks()
-      ordering = np.argsort(ordering)
-      for dim in ordering:
-        out = self._forward(conditioned_on, masks)[:, dim]
-        out = distributions.Bernoulli(probs=out).sample()
-        conditioned_on[:, dim] = torch.where(
-            conditioned_on[:, dim] < 0, out, conditioned_on[:, dim])
-      return conditioned_on.view(out_shape)
-
-
-def reproduce(n_epochs=427, batch_size=128, log_dir='/tmp/run', device='cuda', 
-              debug_loader=None):
-  """Training script with defaults to reproduce results.
-
-  The code inside this function is self contained and can be used as a top level
-  training script, e.g. by copy/pasting it into a Jupyter notebook.
-
-  Args:
-    n_epochs: Number of epochs to train for.
-    batch_size: Batch size to use for training and evaluation.
-    log_dir: Directory where to log trainer state and TensorBoard summaries.
-    device: Device to train on (either 'cuda' or 'cpu').
-    debug_loader: Debug DataLoader which replaces the default training and 
-      evaluation loaders if not 'None'. Do not use unless you're writing unit
-      tests.
-  """
-  from torch import optim
-  from torch import distributions
-  from torch.nn import functional as F
-  from torch.optim import lr_scheduler
-  from torch.utils import data
-  from torchvision import datasets
-  from torchvision import transforms
-
-  from pytorch_generative import trainer
-  from pytorch_generative import models
-
-  transform = transforms.Compose([
-      transforms.ToTensor(),
-      lambda x: distributions.Bernoulli(probs=x).sample()])
-  train_loader = debug_loader or data.DataLoader(
-      datasets.MNIST('/tmp/data', train=True, download=True, transform=transform),
-      batch_size=batch_size, 
-      shuffle=True,
-      num_workers=8)
-  test_loader = debug_loader or data.DataLoader(
-      datasets.MNIST('/tmp/data', train=False, download=True,transform=transform),
-      batch_size=batch_size,
-      num_workers=8)
-
-  model = models.MADE(input_dim=784, 
-                      hidden_dims=[8000], 
-                      n_masks=1)
-  optimizer = optim.Adam(model.parameters())
-
-  def loss_fn(x, _, preds):
-    batch_size = x.shape[0] 
-    x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))
-    loss = F.binary_cross_entropy_with_logits(preds, x, reduction='none')
-    return loss.sum(dim=1).mean()
-
-  model_trainer = trainer.Trainer(model=model,
-                                  loss_fn=loss_fn,
-                                  optimizer=optimizer,
-                                  train_loader=train_loader,
-                                  eval_loader=test_loader,
-                                  log_dir=log_dir,
-                                  device=device)
-  model_trainer.interleaved_train_and_eval(n_epochs)
+    model_trainer = trainer.Trainer(
+        model=model,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        train_loader=train_loader,
+        eval_loader=test_loader,
+        log_dir=log_dir,
+        device=device,
+    )
+    model_trainer.interleaved_train_and_eval(n_epochs)

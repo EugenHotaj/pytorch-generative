@@ -18,40 +18,38 @@ from pytorch_generative.models.vq_vae_2 import VQVAE2
 
 
 class TinyCNN(base.AutoregressiveModel):
-  """A small network used for sanity checks."""
+    """A small network used for sanity checks."""
 
-  def __init__(self, 
-      in_channels=1, 
-      out_channels=1,
-      sample_fn=None):
-    """Initializes a new TinyCNN instance.
+    def __init__(self, in_channels=1, out_channels=1, sample_fn=None):
+        """Initializes a new TinyCNN instance.
 
-    Args:
-      in_channels: Number of input channels.
-      out_channels: Number of output channels.
-      sample_fn: See the base class.
-    """
-    super().__init__(sample_fn)
-    self._conv = pg_nn.MaskedConv2d(
-        is_causal=True, 
-        in_channels=in_channels,
-        out_channels=out_channels,
-        kernel_size=3, 
-        padding=1)
+        Args:
+            in_channels: Number of input channels.
+            out_channels: Number of output channels.
+            sample_fn: See the base class.
+        """
+        super().__init__(sample_fn)
+        self._conv = pg_nn.MaskedConv2d(
+            is_causal=True,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1,
+        )
 
-  def forward(self, x):
-    return self._conv(x)
+    def forward(self, x):
+        return self._conv(x)
 
 
 __all__ = [
-    'GatedPixelCNN', 
-    'ImageGPT',
-    'MADE', 
-    'NADE',
-    'PixelCNN', 
-    'PixelSNAIL', 
-    'VAE',
-    'VQVAE',
-    'VQVAE2',
-    'TinyCNN'
+    "GatedPixelCNN",
+    "ImageGPT",
+    "MADE",
+    "NADE",
+    "PixelCNN",
+    "PixelSNAIL",
+    "VAE",
+    "VQVAE",
+    "VQVAE2",
+    "TinyCNN",
 ]

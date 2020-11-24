@@ -116,7 +116,6 @@ def reproduce(n_epochs=457, batch_size=128, log_dir='/tmp/run', device='cuda',
       transforms.ToTensor(),
       transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
   ])
-
   train_loader = debug_loader or data.DataLoader(
       datasets.CIFAR10('/tmp/data', train=True, download=True, transform=transform),
       batch_size=batch_size, 

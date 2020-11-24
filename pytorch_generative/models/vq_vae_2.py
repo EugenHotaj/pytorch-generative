@@ -85,3 +85,76 @@ class VQVAE2(nn.Module):
         torch.cat((self._conv(decoded_t), quantized_b), dim=1))
     return xhat, .5 * (vq_loss_b + vq_loss_t) + F.mse_loss(decoded_t, encoded_b)
 
+
+def reproduce(n_epochs=457, batch_size=128, log_dir='/tmp/run', device='cuda', 
+              debug_loader=None):
+  """Training script with defaults to reproduce results.
+
+  The code inside this function is self contained and can be used as a top level
+  training script, e.g. by copy/pasting it into a Jupyter notebook.
+
+  Args:
+    n_epochs: Number of epochs to train for.
+    batch_size: Batch size to use for training and evaluation.
+    log_dir: Directory where to log trainer state and TensorBoard summaries.
+    device: Device to train on (either 'cuda' or 'cpu').
+    debug_loader: Debug DataLoader which replaces the default training and 
+      evaluation loaders if not 'None'. Do not use unless you're writing unit
+      tests.
+  """
+  from torch import optim
+  from torch.nn import functional as F
+  from torch.optim import lr_scheduler
+  from torch.utils import data
+  from torchvision import datasets
+  from torchvision import transforms
+
+  from pytorch_generative import trainer
+  from pytorch_generative import models
+
+  transform = transforms.Compose([
+      transforms.ToTensor(),
+      transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+  ])
+
+  train_loader = debug_loader or data.DataLoader(
+      datasets.CIFAR10('/tmp/data', train=True, download=True, transform=transform),
+      batch_size=batch_size, 
+      shuffle=True, 
+      num_workers=8)
+  test_loader = debug_loader or data.DataLoader(
+      datasets.CIFAR10('/tmp/data', train=False, download=True,transform=transform), 
+      batch_size=batch_size, 
+      num_workers=8)
+
+  model = models.VQVAE2(in_channels=3,
+                        out_channels=3, 
+                        hidden_channels=128,
+                        residual_channels=64,
+                        n_residual_blocks=2,
+                        n_embeddings=512,
+                        embedding_dim=64)
+  optimizer = optim.Adam(model.parameters(), lr=2e-4)
+  scheduler = lr_scheduler.MultiplicativeLR(optimizer, 
+                                            lr_lambda=lambda _: .999977)
+
+  def loss_fn(x, _, preds):
+    preds, vq_loss = preds
+    recon_loss = F.mse_loss(preds, x)
+    loss = recon_loss + .25 * vq_loss 
+
+    return {
+        'vq_loss': vq_loss,
+        'reconstruction_loss': recon_loss,
+        'loss': loss, 
+    }
+
+  model_trainer = trainer.Trainer(model=model,
+                                  loss_fn=loss_fn, 
+                                  optimizer=optimizer, 
+                                  train_loader=train_loader, 
+                                  eval_loader=test_loader, 
+                                  lr_scheduler=scheduler, 
+                                  log_dir=log_dir,
+                                  device=device)
+  model_trainer.interleaved_train_and_eval(N_EPOCHS)

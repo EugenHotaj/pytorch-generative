@@ -10,13 +10,13 @@ class VAE(nn.Module):
   """The Variational Autoencoder Model."""
 
   def __init__(self,
-               in_channels=3,
-               out_channels=3,
-               in_size=32,
-               latent_dim=16,
-               hidden_channels=128,
+               in_channels=1,
+               out_channels=1,
+               in_size=28,
+               latent_dim=10,
+               hidden_channels=32,
                n_residual_blocks=2,
-               residual_channels=64):
+               residual_channels=16):
     """Initializes a new VAE instance.
     
     Args:
@@ -79,7 +79,7 @@ class VAE(nn.Module):
     return self._decoder(latents)
 
 
-def reproduce(n_epochs=500, batch_size=128, log_dir='/tmp/run', device='cuda', 
+def reproduce(n_epochs=457, batch_size=128, log_dir='/tmp/run', device='cuda', 
               debug_loader=None):
   """Training script with defaults to reproduce results.
 
@@ -107,14 +107,14 @@ def reproduce(n_epochs=500, batch_size=128, log_dir='/tmp/run', device='cuda',
 
   transform = transforms.ToTensor()
   train_loader = debug_loader or data.DataLoader(
-    datasets.MNIST('/tmp/data', train=True, download=True, transform=transform),
-    batch_size=batch_size, 
-    shuffle=True,
-    num_workers=8)
+      datasets.MNIST('/tmp/data', train=True, download=True, transform=transform),
+      batch_size=batch_size, 
+      shuffle=True,
+      num_workers=8)
   test_loader = debug_loader or data.DataLoader(
-    datasets.MNIST('/tmp/data', train=False, download=True,transform=transform),
-    batch_size=batch_size,
-    num_workers=8)
+      datasets.MNIST('/tmp/data', train=False, download=True,transform=transform),
+      batch_size=batch_size,
+      num_workers=8)
 
   model = models.VAE(in_channels=1,
                      out_channels=1,
@@ -122,7 +122,7 @@ def reproduce(n_epochs=500, batch_size=128, log_dir='/tmp/run', device='cuda',
                      latent_dim=10,
                      hidden_channels=32,
                      n_residual_blocks=2,
-                     residual_channels=32)
+                     residual_channels=16)
   optimizer = optim.Adam(model.parameters(), lr=1e-3)
   scheduler = lr_scheduler.MultiplicativeLR(optimizer, 
                                             lr_lambda=lambda _: .999977)
@@ -147,6 +147,6 @@ def reproduce(n_epochs=500, batch_size=128, log_dir='/tmp/run', device='cuda',
                                   lr_scheduler=scheduler,
                                   sample_epochs=5,
                                   sample_fn=sample_fn,
-                                  device=device,
-                                  log_dir=log_dir)
+                                  log_dir=log_dir,
+                                  device=device)
   model_trainer.interleaved_train_and_eval(n_epochs)

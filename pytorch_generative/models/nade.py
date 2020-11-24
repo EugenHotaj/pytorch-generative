@@ -99,3 +99,63 @@ class NADE(base.AutoregressiveModel):
     with torch.no_grad():
       conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
       return self._forward(conditioned_on)[1]
+
+
+def reproduce(n_epochs=50, batch_size=512, log_dir='/tmp/run', device='cuda', 
+              debug_loader=None):
+  """Training script with defaults to reproduce results.
+
+  The code inside this function is self contained and can be used as a top level
+  training script, e.g. by copy/pasting it into a Jupyter notebook.
+
+  Args:
+    n_epochs: Number of epochs to train for.
+    batch_size: Batch size to use for training and evaluation.
+    log_dir: Directory where to log trainer state and TensorBoard summaries.
+    device: Device to train on (either 'cuda' or 'cpu').
+    debug_loader: Debug DataLoader which replaces the default training and 
+      evaluation loaders if not 'None'. Do not use unless you're writing unit
+      tests.
+  """
+  from torch import optim
+  from torch import distributions
+  from torch.nn import functional as F
+  from torch.optim import lr_scheduler
+  from torch.utils import data
+  from torchvision import datasets
+  from torchvision import transforms
+
+  from pytorch_generative import trainer
+  from pytorch_generative import models
+
+  transform = transforms.Compose([
+    transforms.ToTensor(),
+    lambda x: distributions.Bernoulli(probs=x).sample()])
+  train_loader = debug_loader or data.DataLoader(
+      datasets.MNIST('/tmp/data', train=True, download=True, transform=transform),
+      batch_size=batch_size, 
+      shuffle=True,
+      num_workers=8)
+  test_loader = debug_loader or data.DataLoader(
+      datasets.MNIST('/tmp/data', train=False, download=True,transform=transform),
+      batch_size=batch_size,
+      num_workers=8)
+
+  model = models.NADE(input_dim=784, hidden_dim=500)
+  optimizer = optim.Adam(model.parameters())
+
+  def loss_fn(x, _, preds):
+    batch_size = x.shape[0] 
+    x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))
+    loss = F.binary_cross_entropy_with_logits(preds, x, reduction='none')
+    return loss.sum(dim=1).mean()
+
+  model_trainer = trainer.Trainer(model=model,
+                                  loss_fn=loss_fn, 
+                                  optimizer=optimizer, 
+                                  train_loader=train_loader, 
+                                  eval_loader=test_loader,
+                                  log_dir=log_dir,
+                                  device=device)
+  model_trainer.interleaved_train_and_eval(n_epochs)
+

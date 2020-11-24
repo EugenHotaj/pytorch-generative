@@ -12,6 +12,7 @@ References (used throughout the code):
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from pytorch_generative.models import vaes
 
@@ -55,17 +56,17 @@ class VQVAE2(nn.Module):
     self._quantizer_t = vaes.Quantizer(in_channels=hidden_channels, 
                                        n_embeddings=n_embeddings,
                                        embedding_dim=embedding_dim)
-    self._quantizer_b = Quantizer(in_channels=hidden_channels, 
-                                  n_embeddings=n_embeddings, 
-                                  embedding_dim=embedding_dim)
+    self._quantizer_b = vaes.Quantizer(in_channels=hidden_channels, 
+                                       n_embeddings=n_embeddings, 
+                                       embedding_dim=embedding_dim)
     self._decoder_t = vaes.Decoder(in_channels=embedding_dim,
                                    out_channels=hidden_channels,
                                    hidden_channels=hidden_channels,
                                    n_residual_blocks=n_residual_blocks,
                                    residual_channels=residual_channels,
                                    stride=2)
-    self._conv = nn.Conv2d(in_channels=in_channels, out_channels=embedding_dim,
-                          kernel_size=1)
+    self._conv = nn.Conv2d(in_channels=hidden_channels,
+                           out_channels=embedding_dim, kernel_size=1)
     self._decoder_b = vaes.Decoder(in_channels=2*embedding_dim,
                                    out_channels=out_channels,
                                    hidden_channels=hidden_channels,
@@ -156,4 +157,4 @@ def reproduce(n_epochs=457, batch_size=128, log_dir='/tmp/run', device='cuda',
                                   lr_scheduler=scheduler, 
                                   log_dir=log_dir,
                                   device=device)
-  model_trainer.interleaved_train_and_eval(N_EPOCHS)
+  model_trainer.interleaved_train_and_eval(n_epochs)

@@ -36,9 +36,6 @@ class AutoregressiveModel(nn.Module):
   def sample(self, out_shape=None, conditioned_on=None):
     """Generates new samples from the model.
 
-    The model output is assumed to be the parameters of either a Bernoulli or 
-    multinoulli (Categorical) distribution depending on its dimension.
-
     Args:
       out_shape: The expected shape of the sampled output in NCHW format. 
         Should only be provided when 'conditioned_on=None'.

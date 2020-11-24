@@ -79,3 +79,74 @@ class VAE(nn.Module):
     return self._decoder(latents)
 
 
+def reproduce(n_epochs=500, batch_size=128, log_dir='/tmp/run', device='cuda', 
+              debug_loader=None):
+  """Training script with defaults to reproduce results.
+
+  The code inside this function is self contained and can be used as a top level
+  training script, e.g. by copy/pasting it into a Jupyter notebook.
+
+  Args:
+    n_epochs: Number of epochs to train for.
+    batch_size: Batch size to use for training and evaluation.
+    log_dir: Directory where to log trainer state and TensorBoard summaries.
+    device: Device to train on (either 'cuda' or 'cpu').
+    debug_loader: Debug DataLoader which replaces the default training and 
+      evaluation loaders if not 'None'. Do not use unless you're writing unit
+      tests.
+  """
+  from torch import optim
+  from torch.nn import functional as F
+  from torch.optim import lr_scheduler
+  from torch.utils import data
+  from torchvision import datasets
+  from torchvision import transforms
+
+  from pytorch_generative import trainer
+  from pytorch_generative import models
+
+  transform = transforms.ToTensor()
+  train_loader = debug_loader or data.DataLoader(
+    datasets.MNIST('/tmp/data', train=True, download=True, transform=transform),
+    batch_size=batch_size, 
+    shuffle=True,
+    num_workers=8)
+  test_loader = debug_loader or data.DataLoader(
+    datasets.MNIST('/tmp/data', train=False, download=True,transform=transform),
+    batch_size=batch_size,
+    num_workers=8)
+
+  model = models.VAE(in_channels=1,
+                     out_channels=1,
+                     in_size=28,
+                     latent_dim=10,
+                     hidden_channels=32,
+                     n_residual_blocks=2,
+                     residual_channels=32)
+  optimizer = optim.Adam(model.parameters(), lr=1e-3)
+  scheduler = lr_scheduler.MultiplicativeLR(optimizer, 
+                                            lr_lambda=lambda _: .999977)
+  def loss_fn(x, _, preds):
+    preds, vae_loss = preds 
+    recon_loss = F.binary_cross_entropy_with_logits(preds, x)
+    loss = recon_loss * 100 + vae_loss
+    return {
+        "recon_loss": recon_loss,
+        "vae_loss": vae_loss,
+        "loss": loss,
+    }
+
+  def sample_fn(model):
+    return torch.sigmoid(model.sample(n_images=64))
+
+  model_trainer = trainer.Trainer(model=model,
+                                  loss_fn=loss_fn,
+                                  optimizer=optimizer,
+                                  train_loader=train_loader,
+                                  eval_loader=test_loader,
+                                  lr_scheduler=scheduler,
+                                  sample_epochs=5,
+                                  sample_fn=sample_fn,
+                                  device=device,
+                                  log_dir=log_dir)
+  model_trainer.interleaved_train_and_eval(n_epochs)

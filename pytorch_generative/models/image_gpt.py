@@ -163,8 +163,6 @@ def reproduce(
     optimizer = optim.Adam(model.parameters(), lr=5e-3)
     scheduler = lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda _: 0.999977)
 
-    bce_loss_fn = nn.BCEWithLogitsLoss(reduction="none")
-
     def loss_fn(x, _, preds):
         batch_size = x.shape[0]
         x, preds = x.view((batch_size, -1)), preds.view((batch_size, -1))

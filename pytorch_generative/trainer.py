@@ -213,7 +213,6 @@ class Trainer:
                 self._step += 1
 
             # Evaluate
-            self._model.eval()
             total_examples, total_loss = 0, collections.defaultdict(int)
             for batch in self._eval_loader:
                 batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
@@ -228,7 +227,9 @@ class Trainer:
             self._epoch += 1
             self._save_checkpoint()
             if self._sample_epochs and self._epoch % self._sample_epochs == 0:
-                tensor = self._sample_fn(self._model)
+                self._model.eval()
+                with torch.no_grad():
+                    tensor = self._sample_fn(self._model)
                 self._summary_writer.add_images("sample", tensor, self._step)
 
         self._summary_writer.close()

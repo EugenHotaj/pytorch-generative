@@ -1,5 +1,6 @@
 """Tests that supported models can call forward() and sample()."""
 
+import tempfile
 import unittest
 
 import torch
@@ -8,38 +9,82 @@ from torch import distributions
 from pytorch_generative import models
 
 
-class ModelSmokeTestCase(unittest.TestCase):
-    def _smoke_test(self, model, in_channels=1, test_sampling=True):
-        shape = (2, in_channels, 5, 5)
+class DummyLoader:
+    """Dummy data loader used for integration testing."""
+
+    def __init__(self, channels):
+        self._xs = torch.rand((1, channels, 28, 28))
+        self._ys = torch.tensor([0])
+
+    def __iter__(self):
+        self._exhausted = False
+        return self
+
+    def __next__(self):
+        if not self._exhausted:
+            self._exhausted = True
+            return self._xs, self._ys
+        raise StopIteration()
+
+
+class IntegrationTests(unittest.TestCase):
+    """Main (integration) tests for implemented models."""
+
+    def _test_integration(self, module, in_channels=1):
+        dummy_loader = DummyLoader(in_channels)
+        with tempfile.TemporaryDirectory() as log_dir:
+            module.reproduce(
+                n_epochs=1, log_dir=log_dir, device="cpu", debug_loader=dummy_loader
+            )
+
+    # TODO(eugenhotaj): Use parameterized tests.
+    def test_NADE(self):
+        self._test_integration(models.nade)
+
+    def test_MADE(self):
+        self._test_integration(models.made)
+
+    def test_PixelCNN(self):
+        self._test_integration(models.pixel_cnn)
+
+    def test_GatedPixelCNN(self):
+        self._test_integration(models.gated_pixel_cnn)
+
+    def test_PixelSnail(self):
+        self._test_integration(models.pixel_snail)
+
+    def test_ImageGPT(self):
+        self._test_integration(models.image_gpt)
+
+    def test_VAE(self):
+        self._test_integration(models.vae)
+
+    def test_VQVAE(self):
+        self._test_integration(models.vq_vae, in_channels=3)
+
+    def test_VQVAE2(self):
+        self._test_integration(models.vq_vae_2, in_channels=3)
+
+
+class SmokeTests(unittest.TestCase):
+    """Unit tests for things not caught by the integration tests above."""
+
+    def _smoke_test(self, model):
+        shape = (2, 3, 5, 5)
 
         # Test forward().
         batch = torch.rand(shape)
         model(batch)
 
-        if test_sampling:
-            # Test unconditional sample().
-            model.sample(out_shape=shape)
+        # Test unconditional autoregressive sample().
+        model.sample(out_shape=shape)
 
-            # Test that conditional sample() only modifies pixels < 0.
-            batch[:, :, 1:, :] = -1
-            sample = model.sample(conditioned_on=batch)
-            self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
+        # Test that conditional autoregressive sample() only modifies pixels < 0.
+        batch[:, :, 1:, :] = -1
+        sample = model.sample(conditioned_on=batch)
+        self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
 
-    # TODO(eugenhotaj): Use parameterized tests instead of creating a new method
-    # for each model.
-    def test_TinyCNN(self):
-        model = models.TinyCNN(in_channels=3, out_channels=3)
-        self._smoke_test(model, in_channels=3)
-
-    def test_NADE(self):
-        model = models.NADE(input_dim=25, hidden_dim=5)
-        self._smoke_test(model)
-
-    def test_MADE(self):
-        model = models.MADE(input_dim=25, hidden_dims=[32, 32, 32], n_masks=8)
-        self._smoke_test(model)
-
-    def test_PixelCNN(self):
+    def test_PixelCNN_multiple_channels(self):
         model = models.PixelCNN(
             in_channels=3,
             out_channels=3,
@@ -47,15 +92,15 @@ class ModelSmokeTestCase(unittest.TestCase):
             residual_channels=1,
             head_channels=1,
         )
-        self._smoke_test(model, in_channels=3)
+        self._smoke_test(model)
 
-    def test_GatedPixelCNN(self):
+    def test_GatedPixelCNN_multiple_channels(self):
         model = models.GatedPixelCNN(
             in_channels=3, out_channels=3, n_gated=1, gated_channels=1, head_channels=1
         )
-        self._smoke_test(model, in_channels=3)
+        self._smoke_test(model)
 
-    def test_PixelSNAIL(self):
+    def test_PixelSNAIL_multiple_channels(self):
         model = models.PixelSNAIL(
             in_channels=3,
             out_channels=3,
@@ -65,9 +110,9 @@ class ModelSmokeTestCase(unittest.TestCase):
             attention_key_channels=1,
             attention_value_channels=1,
         )
-        self._smoke_test(model, in_channels=3)
+        self._smoke_test(model)
 
-    def test_ImageGPT(self):
+    def test_ImageGPT_multiple_channels(self):
         model = models.ImageGPT(
             in_channels=3,
             out_channels=3,
@@ -76,42 +121,4 @@ class ModelSmokeTestCase(unittest.TestCase):
             n_attention_heads=2,
             n_embedding_channels=4,
         )
-        self._smoke_test(model, in_channels=3)
-
-    def test_VAE(self):
-        model = models.VAE(
-            in_channels=3,
-            out_channels=3,
-            in_size=5,
-            latent_dim=1,
-            hidden_channels=2,
-            n_residual_blocks=1,
-            residual_channels=1,
-        )
-        self._smoke_test(model, in_channels=3, test_sampling=False)
-        # TODO(eugenhotaj): Create a function to test VAEs sampling.
-        model.sample(n_images=2)
-
-    def test_VQVAE(self):
-        model = models.VQVAE(
-            in_channels=3,
-            out_channels=3,
-            hidden_channels=2,
-            n_residual_blocks=1,
-            residual_channels=1,
-            n_embeddings=2,
-            embedding_dim=2,
-        )
-        self._smoke_test(model, in_channels=3, test_sampling=False)
-
-    def test_VQVAE2(self):
-        model = models.VQVAE(
-            in_channels=3,
-            out_channels=3,
-            hidden_channels=2,
-            n_residual_blocks=1,
-            residual_channels=1,
-            n_embeddings=2,
-            embedding_dim=2,
-        )
-        self._smoke_test(model, in_channels=3, test_sampling=False)
+        self._smoke_test(model)

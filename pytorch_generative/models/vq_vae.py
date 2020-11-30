@@ -103,14 +103,14 @@ def reproduce(
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ]
     )
-    train_loader = data.DataLoader(
+    train_loader = debug_loader or data.DataLoader(
         datasets.CIFAR10("tmp/data", train=True, download=True, transform=transform),
         batch_size=batch_size,
         shuffle=True,
         pin_memory=True,
         num_workers=2,
     )
-    test_loader = data.DataLoader(
+    test_loader = debug_loader or data.DataLoader(
         datasets.CIFAR10("tmp/data", train=False, download=True, transform=transform),
         batch_size=batch_size,
         pin_memory=True,

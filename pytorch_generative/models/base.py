@@ -46,9 +46,6 @@ class AutoregressiveModel(GenerativeModel):
         super().__init__()
         self._sample_fn = sample_fn or _default_sample_fn
 
-    def __call__(self, *args, **kwargs):
-        return super().__call__(*args, **kwargs)
-
     def _get_conditioned_on(self, n_samples, conditioned_on):
         assert (
             n_samples is not None or conditioned_on is not None

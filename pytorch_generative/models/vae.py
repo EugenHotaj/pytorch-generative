@@ -3,10 +3,11 @@
 import torch
 from torch import nn
 
+from pytorch_generative.models import base
 from pytorch_generative.models import vaes
 
 
-class VAE(nn.Module):
+class VAE(base.GenerativeModel):
     """The Variational Autoencoder model."""
 
     def __init__(
@@ -49,8 +50,6 @@ class VAE(nn.Module):
         )
 
     def forward(self, x):
-        # TODO(eugenhotaj): Maybe take in_size as input arguments in sample()?
-        self._in_size = x.shape[2]  # Save for later sampling.
         # NOTE: We use log_var (instead of var or std) for stability and easier
         # optimization during training.
         mean, log_var = torch.split(self._encoder(x), self._latent_channels, dim=1)
@@ -64,7 +63,7 @@ class VAE(nn.Module):
     def sample(self, n_samples):
         """Generates a batch of n_samples."""
         device = next(self.parameters()).device
-        latent_size = self._in_size // 2 ** (self._stride // 2)
+        latent_size = self._h // 2 ** (self._stride // 2)
         shape = (n_samples, self._latent_channels, latent_size, latent_size)
         latents = torch.randn(shape, device=device)
         return self._decoder(latents)
@@ -141,7 +140,7 @@ def reproduce(
         train_loader=train_loader,
         eval_loader=test_loader,
         lr_scheduler=scheduler,
-        sample_epochs=5,
+        sample_epochs=1,
         sample_fn=sample_fn,
         log_dir=log_dir,
         device=device,

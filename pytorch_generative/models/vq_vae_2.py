@@ -14,10 +14,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from pytorch_generative.models import base
 from pytorch_generative.models import vaes
 
 
-class VQVAE2(nn.Module):
+class VQVAE2(base.GenerativeModel):
     """The VQ-VAE-2 model with a latent hierarchy of depth 2."""
 
     def __init__(
@@ -99,6 +100,9 @@ class VQVAE2(nn.Module):
         decoded_t = self._decoder_t(quantized_t)
         xhat = self._decoder_b(torch.cat((self._conv(decoded_t), quantized_b), dim=1))
         return xhat, 0.5 * (vq_loss_b + vq_loss_t) + F.mse_loss(decoded_t, encoded_b)
+
+    def sample(self, n_samples):
+        raise NotImplementedError("VQ-VAE-2 does not support sampling.")
 
 
 def reproduce(

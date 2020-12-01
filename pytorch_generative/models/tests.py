@@ -70,14 +70,12 @@ class SmokeTests(unittest.TestCase):
     """Unit tests for things not caught by the integration tests above."""
 
     def _smoke_test(self, model):
-        shape = (2, 3, 5, 5)
-
         # Test forward().
-        batch = torch.rand(shape)
+        batch = torch.rand(2, 3, 5, 5)
         model(batch)
 
         # Test unconditional autoregressive sample().
-        model.sample(out_shape=shape)
+        model.sample(n_samples=2)
 
         # Test that conditional autoregressive sample() only modifies pixels < 0.
         batch[:, :, 1:, :] = -1

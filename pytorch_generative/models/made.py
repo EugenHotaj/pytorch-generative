@@ -121,15 +121,12 @@ class MADE(base.AutoregressiveModel):
         masks, _ = self._sample_masks()
         return self._forward(x, masks)
 
-    # TODO(eugenhotaj): It's kind of dumb to require an out_shape for
-    # non-convolutional models. We already know what the out_shape should be based
-    # on the model parameters.
-    def sample(self, out_shape=None, conditioned_on=None):
+    def sample(self, n_samples, conditioned_on=None):
         """See the base class."""
         with torch.no_grad():
-            conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
+            conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
             out_shape = conditioned_on.shape
-            conditioned_on = conditioned_on.view(out_shape[0], -1)
+            conditioned_on = conditioned_on.view(n_samples, -1)
 
             masks, ordering = self._sample_masks()
             ordering = np.argsort(ordering)

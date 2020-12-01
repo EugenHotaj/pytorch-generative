@@ -14,10 +14,11 @@ References (used throughout the code):
 
 from torch import nn
 
+from pytorch_generative.models import base
 from pytorch_generative.models import vaes
 
 
-class VQVAE(nn.Module):
+class VQVAE(base.GenerativeModel):
     """The Vector Quantized Variational Autoencoder (VQ-VAE) model."""
 
     def __init__(
@@ -68,6 +69,9 @@ class VQVAE(nn.Module):
         x = self._encoder(x)
         quantized, quantization_loss = self._quantizer(x)
         return self._decoder(quantized), quantization_loss
+
+    def sample(self, n_samples):
+        raise NotImplementedError("VQ-VAE does not support sampling.")
 
 
 def reproduce(

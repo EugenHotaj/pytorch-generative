@@ -1,5 +1,7 @@
 """Base classes for models."""
 
+import abc
+
 import torch
 from torch import distributions
 from torch import nn
@@ -9,7 +11,28 @@ def _default_sample_fn(logits):
     return distributions.Bernoulli(logits=logits).sample()
 
 
-class AutoregressiveModel(nn.Module):
+class GenerativeModel(abc.ABC, nn.Module):
+    """Base class inherited by all generative models in pytorch-generative.
+
+    Provides:
+        * An abstract `sample()` method which is implemented by subclasses that support
+          generating samples.
+        * Variables `self._c, self._h, self._w` which store the shape of the (first)
+          input Tensor the model was trained with. Note that `forward()` must have been
+          called at least once for these variables to be available.
+    """
+
+    def __call__(self, *args, **kwargs):
+        if getattr(self, "c", None) is None:
+            _, self._c, self._h, self._w = args[0].shape
+        return super().__call__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def sample(self, n_samples):
+        ...
+
+
+class AutoregressiveModel(GenerativeModel):
     """The base class for Autoregressive generative models. """
 
     def __init__(self, sample_fn=None):
@@ -23,31 +46,35 @@ class AutoregressiveModel(nn.Module):
         super().__init__()
         self._sample_fn = sample_fn or _default_sample_fn
 
-    def _get_conditioned_on(self, out_shape, conditioned_on):
+    def __call__(self, *args, **kwargs):
+        return super().__call__(*args, **kwargs)
+
+    def _get_conditioned_on(self, n_samples, conditioned_on):
         assert (
-            out_shape is not None or conditioned_on is not None
-        ), 'Must provided one, and only one of "out_shape" or "conditioned_on"'
+            n_samples is not None or conditioned_on is not None
+        ), 'Must provided one, and only one, of "n_samples" or "conditioned_on"'
         if conditioned_on is None:
             device = next(self.parameters()).device
-            conditioned_on = (torch.ones(out_shape) * -1).to(device)
+            shape = (n_samples, self._c, self._h, self._w)
+            conditioned_on = (torch.ones(shape) * -1).to(device)
         else:
             conditioned_on = conditioned_on.clone()
         return conditioned_on
 
     # TODO(eugenhotaj): This function does not handle subpixel sampling correctly.
-    def sample(self, out_shape=None, conditioned_on=None):
+    def sample(self, n_samples=None, conditioned_on=None):
         """Generates new samples from the model.
 
         Args:
-            out_shape: The expected shape of the sampled output in NCHW format.  Should
-                only be provided when 'conditioned_on=None'.
+            n_samples: The number of samples to generate. Should only be provided when
+                `conditioned_on is None`.
             conditioned_on: A batch of partial samples to condition the generation on.
-                Only dimensions with values < 0 will be sampled while dimensions with
-                values >= 0 will be left unchanged. If 'None', an unconditional sample
-                will be generated.
+                Only dimensions with values < 0 are sampled while dimensions with
+                values >= 0 are left unchanged. If 'None', an unconditional sample is
+                generated.
         """
         with torch.no_grad():
-            conditioned_on = self._get_conditioned_on(out_shape, conditioned_on)
+            conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
             n, c, h, w = conditioned_on.shape
             for row in range(h):
                 for col in range(w):

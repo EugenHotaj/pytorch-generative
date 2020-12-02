@@ -62,10 +62,9 @@ class VAE(base.GenerativeModel):
 
     def sample(self, n_samples):
         """Generates a batch of n_samples."""
-        device = next(self.parameters()).device
         latent_size = self._h // 2 ** (self._stride // 2)
         shape = (n_samples, self._latent_channels, latent_size, latent_size)
-        latents = torch.randn(shape, device=device)
+        latents = torch.randn(shape, device=self.device)
         return self._decoder(latents)
 
 

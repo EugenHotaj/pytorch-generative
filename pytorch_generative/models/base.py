@@ -20,12 +20,17 @@ class GenerativeModel(abc.ABC, nn.Module):
         * Variables `self._c, self._h, self._w` which store the shape of the (first)
           input Tensor the model was trained with. Note that `forward()` must have been
           called at least once for these variables to be available.
+        * A `device` property which returns the device of the model's parameters.
     """
 
     def __call__(self, *args, **kwargs):
         if getattr(self, "c", None) is None:
             _, self._c, self._h, self._w = args[0].shape
         return super().__call__(*args, **kwargs)
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     @abc.abstractmethod
     def sample(self, n_samples):
@@ -51,9 +56,8 @@ class AutoregressiveModel(GenerativeModel):
             n_samples is not None or conditioned_on is not None
         ), 'Must provided one, and only one, of "n_samples" or "conditioned_on"'
         if conditioned_on is None:
-            device = next(self.parameters()).device
             shape = (n_samples, self._c, self._h, self._w)
-            conditioned_on = (torch.ones(shape) * -1).to(device)
+            conditioned_on = (torch.ones(shape) * -1).to(self.device)
         else:
             conditioned_on = conditioned_on.clone()
         return conditioned_on

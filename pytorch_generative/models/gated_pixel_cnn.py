@@ -210,30 +210,18 @@ def reproduce(
             tests.
     """
     from torch import optim
-    from torch import distributions
     from torch.nn import functional as F
     from torch.optim import lr_scheduler
-    from torch.utils import data
-    from torchvision import datasets
-    from torchvision import transforms
 
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets
     from pytorch_generative import models
+    from pytorch_generative import trainer
 
-    transform = transforms.Compose(
-        [transforms.ToTensor(), lambda x: distributions.Bernoulli(probs=x).sample()]
-    )
-    train_loader = debug_loader or data.DataLoader(
-        datasets.MNIST("/tmp/data", train=True, download=True, transform=transform),
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=8,
-    )
-    test_loader = debug_loader or data.DataLoader(
-        datasets.MNIST("/tmp/data", train=False, download=True, transform=transform),
-        batch_size=batch_size,
-        num_workers=8,
-    )
+    train_loader, test_loader = debug_loader, debug_loader
+    if train_loader is None:
+        train_loader, test_loader = datasets.get_mnist_loaders(
+            batch_size, dynamically_binarize=True
+        )
 
     model = models.GatedPixelCNN(
         in_channels=1, out_channels=1, n_gated=10, gated_channels=128, head_channels=32

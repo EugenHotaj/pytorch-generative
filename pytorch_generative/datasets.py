@@ -6,9 +6,68 @@ import urllib
 import PIL
 import numpy as np
 import torch
+from torch import distributions
 from torch.utils import data
+from torchvision import datasets
+from torchvision import transforms
 from torchvision.datasets import utils
 from torchvision.datasets import vision
+
+
+def get_mnist_loaders(batch_size, dynamically_binarize=False):
+    """Create train and test loaders for the MNIST dataset.
+
+    Args:
+        batch_size: The batch size to use.
+        dynamically_binarize: Whether to dynamically  binarize images values to {0, 1}.
+    Returns:
+        Tuple of (train_loader, test_loader).
+    """
+    transform = [transforms.ToTensor()]
+    if dynamically_binarize:
+        transform.append(lambda x: distributions.Bernoulli(probs=x).sample())
+    transform = transforms.Compose(transform)
+    train_loader = data.DataLoader(
+        datasets.MNIST("/tmp/data", train=True, download=True, transform=transform),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=8,
+    )
+    test_loader = data.DataLoader(
+        datasets.MNIST("/tmp/data", train=False, download=True, transform=transform),
+        batch_size=batch_size,
+        num_workers=8,
+    )
+    return train_loader, test_loader
+
+
+def get_cifar10_loaders(batch_size, normalize=False):
+    """Create train and test loaders for the CIFAR10 dataset.
+
+    Args:
+        batch_size: The batch size to use.
+        normalize: Whether to normalize images to be zero mean, unit variance.
+    Returns:
+        Tuple of (train_loader, test_loader).
+    """
+    transform = [transforms.ToTensor()]
+    if normalize:
+        transform.append(
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+        )
+    transform = transforms.Compose(transform)
+    train_loader = data.DataLoader(
+        datasets.CIFAR10("/tmp/data", train=True, download=True, transform=transform),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=8,
+    )
+    test_loader = data.DataLoader(
+        datasets.CIFAR10("/tmp/data", train=False, download=True, transform=transform),
+        batch_size=batch_size,
+        num_workers=8,
+    )
+    return train_loader, test_loader
 
 
 def _read_image_file(path, shape):

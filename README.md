@@ -1,11 +1,18 @@
 # pytorch-generative
-**pytorch-generative** is a nascent project that aims to provide a simple, easy to use library for generative modeling in PyTorch. 
 
-The library makes generative model implementation and experimentation easier by abstracting common building blocks such as [MaskedConv2d](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py#L58-L96) and [MaskedAttention](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py#L99-L175).
-It also provides clean, high quality reference implementations of recent State of the Art papers that are easy to read, understand, and extend. 
-Finally, it provides utilities for training, debugging, and working with Google Colab.
+`pytorch-generative` is a Python library which makes generative modeling in PyTorch easier by providing:
 
-So far, the library has primarily focues on Autoregressive modeling. The future goal is to also expand into VAEs, GANS, Flows, etc. 
+* high quality reference implementations of SOTA generative models 
+* useful abstractions of common [building blocks](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) found in the literature
+* utilities for training, debugging, and working with Google Colab
+
+To get started, click on one of the links below.
+* [Example - ImageGPT](#example---imagegpt)
+* [Supported Algorithms](#supported-algorithms) 
+  * [Autoregressive Models](#autoregressive-models)
+  * [Variational Autoencoders](#variational-autoencoders)
+  * [Neural Style Transfer](#neural-style-transfer)
+  * [Compositional Pattern Producing Networks](compositional-pattern-producing-networks)
 
 ## Example - ImageGPT
 
@@ -111,31 +118,30 @@ class ImageGPT(nn.Module):
 
 ## Supported Algorithms
 
- **pytorch-generative** supports the following algorithms. 
- We train most algorithms on [Binarized Mnist](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) 
- and either match or surpass the relevant papers.
+ `pytorch-generative` supports the following algorithms. 
 
 *Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
 
-### Autoregressive Generative Models
+### Autoregressive Models
 
-Binarized MNIST (NLL): 
+[Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats): 
 
-| Algorithm | Our Results | Paper Results | Links |
-| --- | ---| --- | --- |
-| ImageGPT | 79.17 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py) |
-| PixelSNAIL | **78.61** | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py) |
-| Gated PixelCNN | 81.50 | 81.30 ([paper](https://arxiv.org/abs/1601.06759)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py) |
-| PixelCNN | 81.45 | 81.30 ([paper](https://arxiv.org/abs/1601.06759)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_cnn.py) |
-| MADE | 84.87 | 88.04 ([paper](https://arxiv.org/abs/1502.03509)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py) |
-| NADE | 85.65 | 88.86 ([paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf)) | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py) |
+| Algorithm | Our Results | Links |
+| --- | ---| --- |
+| PixelSNAIL | **78.61** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py), [Paper](http://proceedings.mlr.press/v80/chen18h/chen18h.pdf) |
+| ImageGPT | 79.17 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py), [Paper](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf)|
+| Gated PixelCNN | 81.50 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Paper](https://arxiv.org/pdf/1601.06759.pdf) |
+| PixelCNN | 81.45 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_cnn.py), [Paper](https://arxiv.org/pdf/1601.06759.pdf) |
+| MADE | 84.87 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py), [Paper](https://arxiv.org/pdf/1502.03509.pdf) |
+| NADE | 85.65 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py), [Paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf) |
 
 ### Variational Autoencoders
 
-| Algorithm | Our Results | Paper Results | Links |
-| --- | ---| --- | --- |
-| VQ-VAE | TODO | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py) |
-| VQ-VAE-2 | TODO | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py) |
+| Algorithm | Our Results | Links |
+| --- | ---| --- |
+| VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae.py), [Paper](https://arxiv.org/pdf/1312.6114.pdf) |
+| VQ-VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py), [Paper](https://arxiv.org/pdf/1711.00937.pdf) |
+| VQ-VAE-2 | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae_2.py), [Paper](https://arxiv.org/pdf/1906.00446.pdf) |
 
 
 ### Neural Style Transfer

@@ -2,14 +2,6 @@
 
 import argparse
 
-import torch
-from torch import distributions
-from torch import nn
-from torch import optim
-from torch.optim import lr_scheduler
-from torchvision import datasets
-from torchvision import transforms
-
 import pytorch_generative as pg
 
 
@@ -21,6 +13,7 @@ MODEL_DICT = {
     "pixel_cnn": pg.models.pixel_cnn,
     "pixel_snail": pg.models.pixel_snail,
     "vae": pg.models.vae,
+    "vd_vae": pg.models.vd_vae,
     "vq_vae": pg.models.vq_vae,
     "vq_vae_2": pg.models.vq_vae_2,
 }

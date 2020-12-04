@@ -7,6 +7,7 @@ import PIL
 import numpy as np
 import torch
 from torch import distributions
+from torch.nn import functional as F
 from torch.utils import data
 from torchvision import datasets
 from torchvision import transforms
@@ -14,18 +15,21 @@ from torchvision.datasets import utils
 from torchvision.datasets import vision
 
 
-def get_mnist_loaders(batch_size, dynamically_binarize=False):
+def get_mnist_loaders(batch_size, dynamically_binarize=False, resize_to_32=False):
     """Create train and test loaders for the MNIST dataset.
 
     Args:
         batch_size: The batch size to use.
         dynamically_binarize: Whether to dynamically  binarize images values to {0, 1}.
+        resize_to_32: Whether to resize the images to 32x32.
     Returns:
         Tuple of (train_loader, test_loader).
     """
     transform = [transforms.ToTensor()]
     if dynamically_binarize:
         transform.append(lambda x: distributions.Bernoulli(probs=x).sample())
+    if resize_to_32:
+        transform.append(lambda x: F.pad(x, (2, 2, 2, 2)))
     transform = transforms.Compose(transform)
     train_loader = data.DataLoader(
         datasets.MNIST("/tmp/data", train=True, download=True, transform=transform),

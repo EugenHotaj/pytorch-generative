@@ -12,8 +12,8 @@ from pytorch_generative import models
 class DummyLoader:
     """Dummy data loader used for integration testing."""
 
-    def __init__(self, channels):
-        self._xs = torch.rand((1, channels, 28, 28))
+    def __init__(self, channels, size):
+        self._xs = torch.rand((1, channels, size, size))
         self._ys = torch.tensor([0])
 
     def __iter__(self):
@@ -30,8 +30,8 @@ class DummyLoader:
 class IntegrationTests(unittest.TestCase):
     """Main (integration) tests for implemented models."""
 
-    def _test_integration(self, module, in_channels=1):
-        dummy_loader = DummyLoader(in_channels)
+    def _test_integration(self, module, in_channels=1, in_size=28):
+        dummy_loader = DummyLoader(in_channels, in_size)
         with tempfile.TemporaryDirectory() as log_dir:
             module.reproduce(
                 n_epochs=1, log_dir=log_dir, device="cpu", debug_loader=dummy_loader
@@ -58,6 +58,9 @@ class IntegrationTests(unittest.TestCase):
 
     def test_VAE(self):
         self._test_integration(models.vae)
+
+    def test_VeryDeepVAE(self):
+        self._test_integration(models.vd_vae, in_size=32)
 
     def test_VQVAE(self):
         self._test_integration(models.vq_vae, in_channels=3)

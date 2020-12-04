@@ -1,4 +1,8 @@
-"""TODO."""
+"""Implementation of the Very Deep VAE [1] model.
+
+References (used throughout code):
+    [1]: https://arxiv.org/pdf/2011.10650.pdf
+"""
 
 from dataclasses import dataclass
 
@@ -6,15 +10,41 @@ import numpy as np
 import torch
 from torch import nn
 
+from pytorch_generative.models import base
+
 
 @dataclass
 class StackConfig:
-    resolution: int
+    """Configuration for the encoder and decoder stacks at a given resolution.
+
+    The Very Deep VAE model is an (inverted) U-Net architecture consisting of a number
+    of encoding and decoding stacks. After each encoding stack, the input is downscaled
+    by a factor of two. Similarly, after each decoding stack, the input is upscaled by
+    a factor of two.
+
+    During training, the activations from one encoding stack are fed as inputs to the
+    corresponding decoding stack with same resolution.
+
+    Note that n_encoder_blocks and n_decoder blocks can be different.
+    """
+
     n_encoder_blocks: int
     n_decoder_blocks: int
 
 
+DEFAULT_MODEL = [
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+]
+
+
 class BottleneckBlock(nn.Module):
+    """A (potentially residual) bottleneck block."""
+
     def __init__(
         self,
         in_channels,
@@ -23,10 +53,19 @@ class BottleneckBlock(nn.Module):
         bottleneck_kernel_size=3,
         is_residual=True,
     ):
+        """Initializes a new BottleneckBlock.
+
+        Args:
+            in_channels: Number of input channels.
+            out_channels: Number of output channels.
+            bottleneck_channels: Number of channels in middle (bottleneck) convolutions.
+            bottleneck_kernel_size: Kernel size for middle (bottleneck) convolutions.
+            is_residual: Whether to use a residual connection from input to the output.
+        """
         super().__init__()
         self._is_residual = is_residual
 
-        # TODO(eugenhotaj): This only works for kernel_size=3.
+        # TODO(eugenhotaj): This only works for kernel_size in {1, 3}.
         padding = 1 if bottleneck_kernel_size == 3 else 0
         self._net = nn.Sequential(
             nn.GELU(),
@@ -63,6 +102,8 @@ class BottleneckBlock(nn.Module):
 
 
 class TopDownBlock(nn.Module):
+    """Top-down block as introduced in [1]."""
+
     def __init__(
         self,
         n_channels,
@@ -70,6 +111,14 @@ class TopDownBlock(nn.Module):
         bottleneck_channels,
         bottleneck_kernel_size,
     ):
+        """Initializes a new TopDownBlock.
+
+        Args:
+            n_channels: Number of input/output channels.
+            latent_channels: Number of channels in the latent code.
+            bottleneck_channels: Number of bottleneck channels for BottleneckBlocks.
+            bottleneck_kernel_size: Bottleneck kernel size for BottleneckBlocks.
+        """
         super().__init__()
         self._n_channels = n_channels
         self._latent_channels = latent_channels
@@ -100,16 +149,28 @@ class TopDownBlock(nn.Module):
         )
 
     def _kl_div(self, q_mean, q_log_std, p_mean, p_log_std):
-        # NOTE: This KL divergence is only applicable under the assumption that both
-        # the prior and the posterior are Isotropic Gaussian distributions.
+        """Computes the KL divergence between two univariate Gaussian distributions."""
         q_var, p_var = q_log_std.exp() ** 2, p_log_std.exp() ** 2
         mean_delta, std_delta = (q_mean - p_mean) ** 2, p_log_std - q_log_std
         return -0.5 + std_delta + 0.5 * (q_var + mean_delta) / p_var
 
     def _z(self, mean, log_std):
+        """Samples latent code 'z' from a univariate Gaussian distribution."""
         return mean + log_std.exp() * torch.randn_like(log_std)
 
     def forward(self, x, mixin=None):
+        """Computes the forward pass.
+
+        Args:
+            x: Batch of inputs.
+            mixin: Activations from the bottom up pass which are used to compute the
+                approximate posterior. If not 'None' the latents are sampled from the
+                approximated posterior, otherwise the approximate posterior is not
+                computed and the latents are sampled from the prior.
+        Returs:
+            A tuple (activations, kl_div) where kl_div is the KL divergence between the
+            approximate posterior and the prior if mixin is not None, or None otherwise.
+        """
         p_mean, p_log_std, p_h = torch.split(
             self._prior(x),
             [self._latent_channels, self._latent_channels, self._n_channels],
@@ -136,6 +197,8 @@ class TopDownBlock(nn.Module):
 
 
 class EncoderStack(nn.Module):
+    """An encoding module comprised of a stack of ResidualBlocks."""
+
     def __init__(
         self,
         n_residual_blocks,
@@ -144,6 +207,15 @@ class EncoderStack(nn.Module):
         bottleneck_channels,
         bottleneck_kernel_size,
     ):
+        """Initializes a new EncoderStack.
+
+        Args:
+            n_residual_blocks: Number of residual blocks in the EncoderStack.
+            pool: Whether to average pool the output before returning it.
+            n_channels: Number of input/output channels.
+            bottleneck_channels: Number of bottleneck channels for BottleneckBlocks.
+            bottleneck_kernel_size: Bottleneck kernel size for BottleneckBlocks.
+        """
         super().__init__()
         residuals = [
             BottleneckBlock(
@@ -165,6 +237,8 @@ class EncoderStack(nn.Module):
 
 
 class DecoderStack(nn.Module):
+    """A decoding module comprised of a stack of TopDownBlocks."""
+
     def __init__(
         self,
         n_topdown_blocks,
@@ -174,6 +248,17 @@ class DecoderStack(nn.Module):
         bottleneck_channels,
         bottleneck_kernel_size,
     ):
+        """Initializes a new DecoderStack.
+
+        Args:
+            n_topdown_blocks: Number of TopDownBlocks in the DecoderStack.
+            unpool: Whether to nearest-neighbor unpool the input before using it.
+            n_channels: Number of input/output channels.
+            latent_channels: Number of channels in the latent code.
+            bottleneck_channels: Number of bottleneck channels for BottleneckBlocks.
+            bottleneck_kernel_size: Bottleneck kernel size for BottleneckBlocks.
+        """
+
         super().__init__()
         self._unpool = nn.Upsample(scale_factor=2, mode="nearest") if unpool else None
         topdowns = [
@@ -197,26 +282,32 @@ class DecoderStack(nn.Module):
         return x, kl_divs
 
 
-default_model = [
-    StackConfig(resolution=32, n_encoder_blocks=1, n_decoder_blocks=1),
-    StackConfig(resolution=16, n_encoder_blocks=1, n_decoder_blocks=1),
-    StackConfig(resolution=8, n_encoder_blocks=1, n_decoder_blocks=1),
-    StackConfig(resolution=4, n_encoder_blocks=1, n_decoder_blocks=1),
-    StackConfig(resolution=2, n_encoder_blocks=1, n_decoder_blocks=1),
-    StackConfig(resolution=1, n_encoder_blocks=1, n_decoder_blocks=1),
-]
+class VeryDeepVAE(base.GenerativeModel):
+    """The Very Deep VAE Model."""
 
-
-class VeryDeepVAE(nn.Module):
     def __init__(
         self,
         in_channels=1,
         out_channels=1,
-        stack_configs=default_model,
+        input_resolution=32,
+        stack_configs=DEFAULT_MODEL,
         latent_channels=4,
         hidden_channels=16,
         bottleneck_channels=8,
     ):
+        """Initializes a new VeryDeepVAE instance.
+
+        Args:
+            in_channels: Number of input channels.
+            out_channels: Number of output channels.
+            input_resolution: Initial resolution of the input image. The input is
+                downsampled by a factor of two after each encoder stack. See StackConfig
+                for more details.
+            stack_configs: A list of StackConfigs defining the model architecture.
+            latent_channels: Number of channels in the latent code.
+            hidden_channels: Number of non-bottleneck channels.
+            bottleneck_channels: Number of bottleneck channels.
+        """
         super().__init__()
 
         # Encoder.
@@ -224,7 +315,7 @@ class VeryDeepVAE(nn.Module):
             in_channels, out_channels=hidden_channels, kernel_size=3, padding=1
         )
         self._encoder = nn.ModuleList()
-        resolutions = [conf.resolution for conf in stack_configs]
+        resolutions = [input_resolution // 2 ** i for i in range(len(stack_configs))]
         encoder_blocks = [conf.n_encoder_blocks for conf in stack_configs]
         total_encoder_blocks = sum(encoder_blocks)
         for i, (res, n_blocks) in enumerate(zip(resolutions, encoder_blocks)):
@@ -242,7 +333,8 @@ class VeryDeepVAE(nn.Module):
                 block._net[-1].weight.data *= np.sqrt(1 / total_encoder_blocks)
             self._encoder.append(stack)
 
-        # NOTE: We feed bias tensors into the decoder so we can later sample.
+        # NOTE: Bias tensors are used as input into to the decoder during training. We
+        # can then later use these bias tensors to sample from the model.
         biases = [
             nn.Parameter(torch.zeros(1, hidden_channels, size, size))
             for size in resolutions[1:] + [resolutions[-1]]
@@ -285,14 +377,14 @@ class VeryDeepVAE(nn.Module):
         # Top down decoding.
         x = torch.zeros_like(self._biases[-1]).repeat(n, 1, 1, 1)
         kl_divs = []
-        to_zip = self._decoder, reversed(mixins), reversed(self._biases)
-        for stack, mixin, bias in zip(*to_zips):
+        zipped = zip(self._decoder, reversed(mixins), reversed(self._biases))
+        for stack, mixin, bias in zipped:
             x += bias.repeat(n, 1, 1, 1)
             x, divs = stack(x, mixin)
             kl_divs.extend(divs)
 
         # Compute total KL Divergence.
-        kl_div = torch.zeros((n,), device=x.device)
+        kl_div = torch.zeros((n,), device=self.device)
         n_dims = np.prod((c, h, w))
         for div in kl_divs:
             kl_div += div.sum(dim=(1, 2, 3))
@@ -306,3 +398,72 @@ class VeryDeepVAE(nn.Module):
             x += bias.repeat(n_samples, 1, 1, 1)
             x, _ = stack(x)
         return self._output(x)
+
+
+def reproduce(
+    n_epochs=500, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
+):
+    """Training script with defaults to reproduce results.
+
+    The code inside this function is self contained and can be used as a top level
+    training script, e.g. by copy/pasting it into a Jupyter notebook.
+
+    Args:
+        n_epochs: Number of epochs to train for.
+        batch_size: Batch size to use for training and evaluation.
+        log_dir: Directory where to log trainer state and TensorBoard summaries.
+        device: Device to train on (either 'cuda' or 'cpu').
+        debug_loader: Debug DataLoader which replaces the default training and
+            evaluation loaders if not 'None'. Do not use unless you're writing unit
+            tests.
+    """
+    from torch import optim
+    from torch.nn import functional as F
+
+    from pytorch_generative import datasets
+    from pytorch_generative import models
+    from pytorch_generative import trainer
+
+    train_loader, test_loader = debug_loader, debug_loader
+    if train_loader is None:
+        train_loader, test_loader = datasets.get_mnist_loaders(
+            batch_size,
+            resize_to_32=True,
+        )
+
+    model = models.VeryDeepVAE(
+        in_channels=1,
+        out_channels=1,
+        input_resolution=32,
+        latent_channels=16,
+        hidden_channels=32,
+        bottleneck_channels=8,
+    )
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+    def loss_fn(x, _, preds):
+        preds, kl_div = preds
+        recon_loss = F.binary_cross_entropy_with_logits(preds, x, reduction="none")
+        recon_loss = recon_loss.mean(dim=(1, 2, 3))
+        loss = recon_loss + kl_div
+        return {
+            "recon_loss": recon_loss.mean(),
+            "kl_div": kl_div.mean(),
+            "loss": loss.mean(),
+        }
+
+    def sample_fn(model):
+        return torch.sigmoid(model.sample(n_samples=16))
+
+    model_trainer = trainer.Trainer(
+        model=model,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        train_loader=train_loader,
+        eval_loader=test_loader,
+        sample_epochs=1,
+        sample_fn=sample_fn,
+        log_dir=log_dir,
+        device=device,
+    )
+    model_trainer.interleaved_train_and_eval(n_epochs)

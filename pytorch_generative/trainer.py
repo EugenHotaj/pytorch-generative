@@ -6,6 +6,7 @@ import tempfile
 import time
 
 import torch
+from torch.nn import utils
 from torch.utils import tensorboard
 
 
@@ -24,11 +25,13 @@ class Trainer:
         optimizer,
         train_loader,
         eval_loader,
-        save_checkpoint_epochs=1,
+        lr_scheduler=None,
+        clip_grad_norm=None,
+        skip_grad_norm=None,
         sample_epochs=None,
         sample_fn=None,
-        lr_scheduler=None,
         log_dir=None,
+        save_checkpoint_epochs=1,
         device="cpu",
     ):
         """Initializes a new Trainer instance.
@@ -42,18 +45,20 @@ class Trainer:
             optimizer: Optimizer to use when training.
             train_loader: DataLoader for the training set.
             eval_loader: DataLoader for the evaluation set.
-            save_checkpoint_epochs: Number of epochs to wait between checkpoints. Note
-                that this does not affect TensorBoard logging frequency.
+            lr_scheduler: An torch.optim.lr_scheduler whose step() method is called
+                after every batch.
+            clip_grad_norm: L2 norm to scale gradients to if their norm is greater.
+            skip_grad_norm: Maximum L2 norm above which gradients are discarded.
             sample_epochs: Number of epochs to wait between generating new image samples
                 and logging them to TensorBoard. If not `None`, `sample_fn` must be
                 provided.
             sample_fn: A `fn(model)->Tensor` which returns an NCHW Tensor of images to
                 log to TensorBoard.
-            lr_scheduler: An torch.optim.lr_scheduler whose step() method is called
-                after every batch.
             log_dir: The directory where to log checkpoints and TensorBoard metrics. If
                 `None` a temporary directory is created (note that this directory is not
                 cleaned up automatically).
+            save_checkpoint_epochs: Number of epochs to wait between checkpoints. Note
+                that this does not affect TensorBoard logging frequency.
             device: The device to place the model and data. Either string or
                 torch.device.
         """
@@ -65,6 +70,8 @@ class Trainer:
         self._loss_fn = loss_fn
         self._train_loader = train_loader
         self._eval_loader = eval_loader
+        self._clip_grad_norm = clip_grad_norm
+        self._skip_grad_norm = skip_grad_norm
         self._log_dir = log_dir or tempfile.mkdtemp()
         self._save_checkpoint_epochs = save_checkpoint_epochs
         self._device = torch.device(device) if isinstance(device, str) else device
@@ -152,9 +159,17 @@ class Trainer:
         self._optimizer.zero_grad()
         loss = self._get_loss_dict(self.train_one_batch(x, y))
         loss["loss"].backward()
-        self._optimizer.step()
-        if self._lr_scheduler is not None:
-            self._lr_scheduler.step()
+
+        norm = 0
+        max_norm = self._clip_grad_norm or self._skip_grad_norm or None
+        if max_norm:
+            norm = utils.clip_grad_norm(self._model.parameters(), max_norm).item()
+
+        if not self._skip_grad_norm or norm <= self._skip_grad_norm:
+            self._optimizer.step()
+            if self._lr_scheduler is not None:
+                self._lr_scheduler.step()
+
         return {k: v.item() for k, v in loss.items()}
 
     def eval_one_batch(self, x, y):

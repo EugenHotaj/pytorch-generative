@@ -1,5 +1,7 @@
 """Implementation of the Very Deep VAE [1] model.
 
+TODO(eugenhotaj): explain.
+
 References (used throughout code):
     [1]: https://arxiv.org/pdf/2011.10650.pdf
 """
@@ -272,12 +274,21 @@ class DecoderStack(nn.Module):
         ]
         self._topdowns = nn.ModuleList(topdowns)
 
-    def forward(self, x, bottom_up=None):
+    def forward(self, x, mixin=None):
+        """Computes the forward pass.
+
+        Args:
+            x: Batch of inputs.
+            mixin: Activations from bottom up pass. See TopDownBlock for more details.
+        Returs:
+            A tuple (activations, kl_divs) where kl_divs is a list of the KL divergences
+            returned by all the TopDownBlocks in the stack.
+        """
         if self._unpool is not None:
             x = self._unpool(x)
         kl_divs = []
         for topdown in self._topdowns:
-            x, kl_div = topdown(x, bottom_up)
+            x, kl_div = topdown(x, mixin)
             kl_divs.append(kl_div)
         return x, kl_divs
 
@@ -328,9 +339,9 @@ class VeryDeepVAE(base.GenerativeModel):
                 bottleneck_channels=bottleneck_channels,
                 bottleneck_kernel_size=bottleneck_kernel_size,
             )
-            # Initialize weights of last conv in each residual block to 1 / n_blocks.
+            # Scale weights of res blocks' last conv by 1 / sqrt(n_blocks).
             for block in stack._residuals:
-                block._net[-1].weight.data *= np.sqrt(1 / total_encoder_blocks)
+                block._net[-1].weight.data /= np.sqrt(total_encoder_blocks)
             self._encoder.append(stack)
 
         # NOTE: Bias tensors are used as input into to the decoder during training. We
@@ -356,9 +367,10 @@ class VeryDeepVAE(base.GenerativeModel):
                 bottleneck_channels=bottleneck_channels,
                 bottleneck_kernel_size=bottleneck_kernel_size,
             )
-            # Initialize weights of last conv in each topdown block to 1 / n_blocks.
+            # Scale weights of res block's last conv and latents by 1 / sqrt(n_blocks).
             for block in stack._topdowns:
-                block._out._net[-1].weight.data *= np.sqrt(1 / total_decoder_blocks)
+                block._out._net[-1].weight.data /= np.sqrt(total_decoder_blocks)
+                block._latents.weight.data /= np.sqrt(total_decoder_blocks)
             self._decoder.append(stack)
         self._output = nn.Conv2d(
             in_channels=hidden_channels, out_channels=out_channels, kernel_size=1

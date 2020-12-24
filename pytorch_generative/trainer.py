@@ -63,45 +63,43 @@ class Trainer:
                 torch.device.
         """
         # Stateful objects that need to be saved.
-        self._model = model.to(device)
-        self._optimizer = optimizer
-        self._lr_scheduler = lr_scheduler
+        self.model = model.to(device)
+        self.optimizer = optimizer
+        self.lr_scheduler = lr_scheduler
 
-        self._loss_fn = loss_fn
-        self._train_loader = train_loader
-        self._eval_loader = eval_loader
-        self._clip_grad_norm = clip_grad_norm
-        self._skip_grad_norm = skip_grad_norm
-        self._log_dir = log_dir or tempfile.mkdtemp()
-        self._save_checkpoint_epochs = save_checkpoint_epochs
-        self._device = torch.device(device) if isinstance(device, str) else device
+        self.loss_fn = loss_fn
+        self.train_loader = train_loader
+        self.eval_loader = eval_loader
+        self.clip_grad_norm = clip_grad_norm
+        self.skip_grad_norm = skip_grad_norm
+        self.log_dir = log_dir or tempfile.mkdtemp()
+        self.save_checkpoint_epochs = save_checkpoint_epochs
+        self.device = torch.device(device) if isinstance(device, str) else device
 
-        self._sample_epochs = sample_epochs
-        self._sample_fn = sample_fn
-        if self._sample_epochs:
+        self.sample_epochs = sample_epochs
+        self.sample_fn = sample_fn
+        if self.sample_epochs:
             msg = "sample_fn cannot be None if sample_epochs is not None"
-            assert self._sample_fn, msg
+            assert self.sample_fn, msg
 
         self._step = 0
         self._epoch = 0
         self._examples_processed = 0
         self._time_taken = 0
 
-        self._summary_writer = tensorboard.SummaryWriter(self._log_dir, max_queue=100)
+        self._summary_writer = tensorboard.SummaryWriter(self.log_dir, max_queue=100)
 
     def _path(self, file_name):
-        return os.path.join(self._log_dir, file_name)
+        return os.path.join(self.log_dir, file_name)
 
     def _save_checkpoint(self):
-        if self._epoch % self._save_checkpoint_epochs != 0:
+        if self._epoch % self.save_checkpoint_epochs != 0:
             return
 
-        torch.save(self._model.state_dict(), self._path("model_state"))
-        torch.save(self._optimizer.state_dict(), self._path("optimizer_state"))
-        if self._lr_scheduler is not None:
-            torch.save(
-                self._lr_scheduler.state_dict(), self._path("lr_scheduler_state")
-            )
+        torch.save(self.model.state_dict(), self._path("model_state"))
+        torch.save(self.optimizer.state_dict(), self._path("optimizer_state"))
+        if self.lr_scheduler is not None:
+            torch.save(self.lr_scheduler.state_dict(), self._path("lr_scheduler_state"))
         # TODO(eugenhotaj): Instead of saving these internal counters one at a
         # time, maybe we can save them as a dictionary.
         torch.save(self._step, self._path("step"))
@@ -111,10 +109,10 @@ class Trainer:
 
     def load_from_checkpoint(self):
         """Attempts to load Trainer state from the internal log_dir."""
-        self._model.load_state_dict(torch.load(self._path("model_state")))
-        self._optimizer.load_state_dict(torch.load(self._path("optimizer_state")))
-        if self._lr_scheduler is not None:
-            self._lr_scheduler.load_state_dict(
+        self.model.load_state_dict(torch.load(self._path("model_state")))
+        self.optimizer.load_state_dict(torch.load(self._path("optimizer_state")))
+        if self.lr_scheduler is not None:
+            self.lr_scheduler.load_state_dict(
                 torch.load(self._path("lr_scheduler_state"))
             )
         self._step = torch.load(self._path("step"))
@@ -125,7 +123,7 @@ class Trainer:
         # logs written after the last saved checkpoint are purged.
         self._summary_writer.close()
         self._summary_writer = tensorboard.SummaryWriter(
-            self._log_dir, max_queue=100, purge_step=self._step
+            self.log_dir, max_queue=100, purge_step=self._step
         )
 
     def _get_loss_dict(self, loss):
@@ -147,28 +145,28 @@ class Trainer:
 
         Subclasses can override this method to define custom training loops.
         """
-        preds = self._model(x)
-        loss = self._loss_fn(x, y, preds)
+        preds = self.model(x)
+        loss = self.loss_fn(x, y, preds)
         return loss
 
     def _train_one_batch(self, x, y):
-        self._model.train()
-        x = x.to(self._device)
+        self.model.train()
+        x = x.to(self.device)
         if y is not None:
-            y = y.to(self._device)
-        self._optimizer.zero_grad()
+            y = y.to(self.device)
+        self.optimizer.zero_grad()
         loss = self._get_loss_dict(self.train_one_batch(x, y))
         loss["loss"].backward()
 
         norm = 0
-        max_norm = self._clip_grad_norm or self._skip_grad_norm or None
+        max_norm = self.clip_grad_norm or self.skip_grad_norm or None
         if max_norm:
-            norm = utils.clip_grad_norm(self._model.parameters(), max_norm).item()
+            norm = utils.clip_grad_norm(self.model.parameters(), max_norm).item()
 
-        if not self._skip_grad_norm or norm <= self._skip_grad_norm:
-            self._optimizer.step()
-            if self._lr_scheduler is not None:
-                self._lr_scheduler.step()
+        if not self.skip_grad_norm or norm <= self.skip_grad_norm:
+            self.optimizer.step()
+            if self.lr_scheduler is not None:
+                self.lr_scheduler.step()
 
         return {k: v.item() for k, v in loss.items()}
 
@@ -177,16 +175,16 @@ class Trainer:
 
         Subclasses can override this method to define custom evaluation loops.
         """
-        preds = self._model(x)
-        loss = self._loss_fn(x, y, preds)
+        preds = self.model(x)
+        loss = self.loss_fn(x, y, preds)
         return loss
 
     def _eval_one_batch(self, x, y):
         with torch.no_grad():
-            self._model.eval()
-            x = x.to(self._device)
+            self.model.eval()
+            x = x.to(self.device)
             if y is not None:
-                y = y.to(self._device)
+                y = y.to(self.device)
             loss = self._get_loss_dict(self.eval_one_batch(x, y))
             return {k: v.item() for k, v in loss.items()}
 
@@ -197,13 +195,13 @@ class Trainer:
             start_time = time.time()
 
             # Train.
-            for i, batch in enumerate(self._train_loader):
+            for i, batch in enumerate(self.train_loader):
                 batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
                 x, y = batch
                 self._examples_processed += x.shape[0]
                 lrs = {
                     f"group_{i}": param["lr"]
-                    for i, param in enumerate(self._optimizer.param_groups)
+                    for i, param in enumerate(self.optimizer.param_groups)
                 }
                 self._summary_writer.add_scalars("loss/lr", lrs, self._step)
                 loss = self._train_one_batch(x, y)
@@ -229,7 +227,7 @@ class Trainer:
 
             # Evaluate
             total_examples, total_loss = 0, collections.defaultdict(int)
-            for batch in self._eval_loader:
+            for batch in self.eval_loader:
                 batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
                 x, y = batch
                 n_examples = x.shape[0]
@@ -241,10 +239,10 @@ class Trainer:
 
             self._epoch += 1
             self._save_checkpoint()
-            if self._sample_epochs and self._epoch % self._sample_epochs == 0:
-                self._model.eval()
+            if self.sample_epochs and self._epoch % self.sample_epochs == 0:
+                self.model.eval()
                 with torch.no_grad():
-                    tensor = self._sample_fn(self._model)
+                    tensor = self.sample_fn(self.model)
                 self._summary_writer.add_images("sample", tensor, self._step)
 
         self._summary_writer.close()

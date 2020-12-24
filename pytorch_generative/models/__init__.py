@@ -30,8 +30,8 @@ class TinyCNN(base.AutoregressiveModel):
             sample_fn: See the base class.
         """
         super().__init__(sample_fn)
-        self._conv = pg_nn.MaskedConv2d(
-            is_causal=True,
+        self._conv = pg_nn.CausalConv2d(
+            mask_center=True,
             in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=3,

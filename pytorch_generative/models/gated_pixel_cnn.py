@@ -38,15 +38,15 @@ class GatedPixelCNNLayer(nn.Module):
     the skip connection to the pre-logits layer.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, is_causal=False):
+    def __init__(self, in_channels, out_channels, kernel_size=3, mask_center=False):
         """Initializes a new GatedPixelCNNLayer instance.
 
         Args:
             in_channels: The number of channels in the input.
             out_channels: The number of output channels.
-             kernel_size: The size of the (masked) convolutional kernel to use.
-            is_causal: Whether the 'GatedPixelCNNLayer' is causal. If 'True', the
-                current pixel is masked out so the computation only depends on pixels to
+            kernel_size: The size of the (causal) convolutional kernel to use.
+            mask_center: Whether the 'GatedPixelCNNLayer' is causal. If 'True', the
+                center pixel is masked out so the computation only depends on pixels to
                 the left and above. The residual connection in the horizontal stack is
                 also removed.
         """
@@ -59,7 +59,7 @@ class GatedPixelCNNLayer(nn.Module):
         self._activation = pg_nn.GatedActivation()
         self._kernel_size = kernel_size
         self._padding = (kernel_size - 1) // 2  # (kernel_size - stride) / 2
-        self._is_causal = is_causal
+        self._mask_center = mask_center
 
         # Vertical stack convolutions.
         self._vstack_1xN = nn.Conv2d(
@@ -91,7 +91,7 @@ class GatedPixelCNNLayer(nn.Module):
             in_channels=self._in_channels,
             out_channels=2 * self._out_channels,
             kernel_size=(1, self._kernel_size // 2 + 1),
-            padding=(0, self._padding + int(self._is_causal)),
+            padding=(0, self._padding + int(self._mask_center)),
         )
         self._hstack_residual = nn.Conv2d(
             in_channels=out_channels, out_channels=out_channels, kernel_size=1
@@ -126,7 +126,7 @@ class GatedPixelCNNLayer(nn.Module):
         hstack = self._hstack_residual(hstack)
         # NOTE(eugenhotaj): We cannot use a residual connection for causal layers
         # otherwise we'll have access to future pixels.
-        if not self._is_causal:
+        if not self._mask_center:
             hstack += hstack_input
 
         return vstack, hstack, skip
@@ -160,7 +160,7 @@ class GatedPixelCNN(base.AutoregressiveModel):
             in_channels=in_channels,
             out_channels=gated_channels,
             kernel_size=7,
-            is_causal=True,
+            mask_center=True,
         )
         self._gated_layers = nn.ModuleList(
             [
@@ -168,7 +168,7 @@ class GatedPixelCNN(base.AutoregressiveModel):
                     in_channels=gated_channels,
                     out_channels=gated_channels,
                     kernel_size=3,
-                    is_causal=False,
+                    mask_center=False,
                 )
                 for _ in range(n_gated)
             ]

@@ -90,11 +90,11 @@ class PixelSNAILBlock(nn.Module):
         self._residual = nn.Sequential(
             *[ResidualBlock(n_channels) for _ in range(n_residual_blocks)]
         )
-        self._attention = pg_nn.MaskedAttention(
+        self._attention = pg_nn.CausalAttention(
             in_channels=n_channels + 2 * input_img_channels,
             embed_channels=attention_key_channels,
             out_channels=attention_value_channels,
-            is_causal=True,
+            mask_center=True,
             extra_input_channels=input_img_channels,
         )
         self._residual_out = conv(n_channels)
@@ -152,8 +152,8 @@ class PixelSNAIL(base.AutoregressiveModel):
             sample_fn: See the base class.
         """
         super().__init__(sample_fn)
-        self._input = pg_nn.MaskedConv2d(
-            is_causal=True,
+        self._input = pg_nn.CausalConv2d(
+            mask_center=True,
             in_channels=in_channels,
             out_channels=n_channels,
             kernel_size=3,

@@ -3,7 +3,7 @@
 PixelCNN extends Masked Autoregressive Density Estimation (MADE) [2] to 
 convolutional neural networks. Convolutional filters are masked to respect the
 autoregressive property so that the outputs of each filter only depend on left
-and above inputs (see MaskedConv2d for details).
+and above inputs (see pytorch_generative.nn.CausalConv2d for details).
 
 NOTE: Our implementation does *not* use autoregressive channel masking. This
 means that each output depends on whole pixels and not sub-pixels. For outputs
@@ -22,11 +22,11 @@ from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
 
 
-class MaskedResidualBlock(nn.Module):
+class CausalResidualBlock(nn.Module):
     """A residual block masked to respect the autoregressive property."""
 
     def __init__(self, n_channels):
-        """Initializes a new MaskedResidualBlock instance.
+        """Initializes a new CausalResidualBlock instance.
 
         Args:
             n_channels: The number of input (and output) channels.
@@ -38,8 +38,8 @@ class MaskedResidualBlock(nn.Module):
                 in_channels=n_channels, out_channels=n_channels // 2, kernel_size=1
             ),
             nn.ReLU(),
-            pg_nn.MaskedConv2d(
-                is_causal=False,
+            pg_nn.CausalConv2d(
+                mask_center=False,
                 in_channels=n_channels // 2,
                 out_channels=n_channels // 2,
                 kernel_size=3,
@@ -79,16 +79,16 @@ class PixelCNN(base.AutoregressiveModel):
             sample_fn: See the base class.
         """
         super().__init__(sample_fn)
-        self._input = pg_nn.MaskedConv2d(
-            is_causal=True,
+        self._input = pg_nn.CausalConv2d(
+            mask_center=True,
             in_channels=in_channels,
             out_channels=2 * residual_channels,
             kernel_size=7,
             padding=3,
         )
-        self._masked_layers = nn.ModuleList(
+        self._causal_layers = nn.ModuleList(
             [
-                MaskedResidualBlock(n_channels=2 * residual_channels)
+                CausalResidualBlock(n_channels=2 * residual_channels)
                 for _ in range(n_residual)
             ]
         )
@@ -107,7 +107,7 @@ class PixelCNN(base.AutoregressiveModel):
 
     def forward(self, x):
         x = self._input(x)
-        for layer in self._masked_layers:
+        for layer in self._causal_layers:
             x = x + layer(x)
         return self._head(x)
 

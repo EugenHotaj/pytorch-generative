@@ -71,34 +71,33 @@ class NCHWLayerNorm(nn.LayerNorm):
         return x.permute(0, 3, 1, 2)
 
 
-class MaskedConv2d(nn.Conv2d):
+class CausalConv2d(nn.Conv2d):
     """A Conv2d layer masked to respect the autoregressive property.
 
     Autoregressive masking means that the computation of the current pixel only
-    depends on itself, pixels to the left, and pixels above. When the convolution
-    is causally masked (i.e. is_causal=True), the computation of the current
-    pixel does not depend on itself.
+    depends on itself, pixels to the left, and pixels above. When mask_center=True, the
+    computation of the current pixel does not depend on itself.
 
     E.g. for a 3x3 kernel, the following masks are generated for each channel:
-                        [[1 1 1],                   [[1 1 1],
-        is_causal=False  [1 1 0],    is_causal=True  [1 0 0],
-                         [0 0 0]]                    [0 0 0]
+                          [[1 1 1],                     [[1 1 1],
+        mask_center=False  [1 1 0],    mask_center=True  [1 0 0],
+                           [0 0 0]]                      [0 0 0]
     In [1], they refer to the left masks as 'type A' and right as 'type B'.
 
     NOTE: This layer does *not* implement autoregressive channel masking.
     """
 
-    def __init__(self, is_causal, *args, **kwargs):
-        """Initializes a new MaskedConv2d instance.
+    def __init__(self, mask_center, *args, **kwargs):
+        """Initializes a new CausalConv2d instance.
 
         Args:
-            is_causal: Whether the convolution should be causally masked.
+            mask_center: Whether to mask the center pixel of the convolution filters.
         """
         super().__init__(*args, **kwargs)
         i, o, h, w = self.weight.shape
         mask = torch.zeros((i, o, h, w))
         mask.data[:, :, : h // 2, :] = 1
-        mask.data[:, :, h // 2, : w // 2 + int(not is_causal)] = 1
+        mask.data[:, :, h // 2, : w // 2 + int(not mask_center)] = 1
         self.register_buffer("mask", mask)
 
     def forward(self, x):
@@ -107,20 +106,20 @@ class MaskedConv2d(nn.Conv2d):
 
 
 @functools.lru_cache(maxsize=32)
-def _get_causal_mask(size, is_causal):
+def _get_causal_mask(size, mask_center):
     """Generates causal masks for attention weights."""
-    return torch.tril(torch.ones((size, size)), diagonal=-int(is_causal))
+    return torch.tril(torch.ones((size, size)), diagonal=-int(mask_center))
 
 
-class MaskedAttention(nn.Module):
-    """Autoregresively masked multihead self-attention layer.
+class CausalAttention(nn.Module):
+    """Autoregresively masked, multihead self-attention layer.
 
     Autoregressive masking means that the current pixel can only attend to itself,
-    pixels to the left, and pixels above. When the convolution is causally masked
-    (i.e. is_causal=True), the current pixel does not attent to itself.
+    pixels to the left, and pixels above. When mask_center=True, the current pixel does
+    not attent to itself.
 
-    This Module generalizes attention to use 2D convolutions instead of fully
-    connected layers. As such, the input is expected to be 4D image tensors.
+    This Module generalizes attention to use 2D convolutions instead of fully connected
+    layers. As such, the input is expected to be 4D image tensors.
     """
 
     def __init__(
@@ -129,10 +128,10 @@ class MaskedAttention(nn.Module):
         n_heads=1,
         embed_channels=None,
         out_channels=None,
-        is_causal=False,
+        mask_center=False,
         extra_input_channels=0,
     ):
-        """Initializes a new MaskedAttention instance.
+        """Initializes a new CausalAttention instance.
 
         Args:
             in_channels: Number of input channels.
@@ -143,13 +142,13 @@ class MaskedAttention(nn.Module):
                 the embeddings and not the attention weights since doing so may break
                 the autoregressive property. For example, in [2] these channels include
                 the original input image.
-            is_causal: Whether the convolution should be causally masked.
+            mask_center: Whether to mask the center pixel of the attention matrices.
         """
         super().__init__()
         self._n_heads = n_heads
         self._embed_channels = embed_channels or in_channels
         self._out_channels = out_channels or in_channels
-        self._is_causal = is_causal
+        self._mask_center = mask_center
 
         self._q = nn.Conv2d(
             in_channels=in_channels, out_channels=self._embed_channels, kernel_size=1
@@ -194,7 +193,7 @@ class MaskedAttention(nn.Module):
 
         # Compute the causual attention weights.
         mask = (
-            _get_causal_mask(h * w, self._is_causal)
+            _get_causal_mask(h * w, self._mask_center)
             .view(1, 1, h * w, h * w)
             .to(next(self.parameters()).device)
         )
@@ -211,7 +210,7 @@ def _idx(i):
     return (slice(None), slice(None), slice(i, i + 1, 1), slice(None))
 
 
-class _UnnormalizedLinearMaskedAttention(autograd.Function):
+class _UnnormalizedLinearCausalAttention(autograd.Function):
     """Computes unnormalized causal attention using only O(N*C) memory."""
 
     @staticmethod
@@ -241,20 +240,20 @@ class _UnnormalizedLinearMaskedAttention(autograd.Function):
         return dQ, dK, dV
 
 
-# TODO(eugenhotaj): LinearMaskedAttention currently does O(N) computations each
+# TODO(eugenhotaj): LinearCausalAttention currently does O(N) computations each
 # time forward is called. During sampling, forward is called N times to generate
-# N pixels. This means that during sampling  LinearMaskedAttention unnecessarily
+# N pixels. This means that during sampling  LinearCausalAttention unnecessarily
 # does O(N^2) computations, most of which are thrown away. Instead, we can do
 # O(N) work during sampling by storing previous activations as proposed in [3].
-# TODO(eugenhotaj): This API does not match the MaskedAttention API. We need
-# to add support for is_causal and extra_input. There is also a lot of shared
+# TODO(eugenhotaj): This API does not match the CausalAttention API. We need
+# to add support for mask_center and extra_input. There is also a lot of shared
 # code between the two which sould be extracted. It's probably possible to
 # have base class which does the bookkeeping and the subclasses implement
 # the actual computations.
-class LinearMaskedAttention(nn.Module):
-    """Memory efficient implementation of MaskedAttention as introduced in [3].
+class LinearCausalAttention(nn.Module):
+    """Memory efficient implementation of CausalAttention as introduced in [3].
 
-    NOTE: LinearMaskedAttention is *much* slower than MaskedAttention and should
+    NOTE: LinearCausalAttention is *much* slower than CausalAttention and should
     only be used if your model cannot fit in memory.
 
     This implementation only requiers O(N) memory (instead of O(N^2)) for a
@@ -272,9 +271,8 @@ class LinearMaskedAttention(nn.Module):
         n_heads=1,
         embed_channels=None,
         out_channels=None,
-        is_causal=False,
     ):
-        """Initializes a new MaskedAttention instance.
+        """Initializes a new LinearCausalAttention instance.
 
         Args:
             in_channels: Number of input channels.
@@ -283,7 +281,6 @@ class LinearMaskedAttention(nn.Module):
             n_heads: Number of causal self-attention heads.
             embed_channels: Number of embedding channels. Defaults to in_channels.
             out_channels: Number of output channels. Defaults to in_channels.
-            is_causal: Unused and always set to False..
         """
         super().__init__()
         self._feature_fn = feature_fn
@@ -299,7 +296,7 @@ class LinearMaskedAttention(nn.Module):
             out_channels=self._embed_channels + self._out_channels,
             kernel_size=1,
         )
-        self._numerator = _UnnormalizedLinearMaskedAttention.apply
+        self._numerator = _UnnormalizedLinearCausalAttention.apply
 
     def forward(self, x):
         def _to_multihead(t):

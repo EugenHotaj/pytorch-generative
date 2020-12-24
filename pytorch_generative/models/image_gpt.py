@@ -32,7 +32,7 @@ class TransformerBlock(nn.Module):
         super().__init__()
         self._ln1 = pg_nn.NCHWLayerNorm(n_channels)
         self._ln2 = pg_nn.NCHWLayerNorm(n_channels)
-        self._attn = pg_nn.MaskedAttention(
+        self._attn = pg_nn.CausalAttention(
             in_channels=n_channels,
             n_heads=n_attention_heads,
             embed_channels=n_channels,
@@ -85,8 +85,8 @@ class ImageGPT(base.AutoregressiveModel):
         """
         super().__init__(sample_fn)
         self._pos = nn.Parameter(torch.zeros(1, in_channels, in_size, in_size))
-        self._input = pg_nn.MaskedConv2d(
-            is_causal=True,
+        self._input = pg_nn.CausalConv2d(
+            mask_center=True,
             in_channels=in_channels,
             out_channels=n_embedding_channels,
             kernel_size=3,

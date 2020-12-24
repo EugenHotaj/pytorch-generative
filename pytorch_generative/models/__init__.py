@@ -14,8 +14,8 @@ from pytorch_generative.models.pixel_cnn import PixelCNN
 from pytorch_generative.models.pixel_snail import PixelSNAIL
 from pytorch_generative.models.vae import VAE
 from pytorch_generative.models.vd_vae import VeryDeepVAE
-from pytorch_generative.models.vq_vae import VQVAE
-from pytorch_generative.models.vq_vae_2 import VQVAE2
+from pytorch_generative.models.vq_vae import VectorQuantizedVAE
+from pytorch_generative.models.vq_vae_2 import VectorQuantizedVAE2
 
 
 class TinyCNN(base.AutoregressiveModel):
@@ -51,7 +51,7 @@ __all__ = [
     "PixelSNAIL",
     "VAE",
     "VeryDeepVAE",
-    "VQVAE",
-    "VQVAE2",
+    "VectorQuantizedVAE",
+    "VectorQuantizedVAE2",
     "TinyCNN",
 ]

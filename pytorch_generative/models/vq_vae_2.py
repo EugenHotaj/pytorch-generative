@@ -18,7 +18,7 @@ from pytorch_generative.models import base
 from pytorch_generative.models import vaes
 
 
-class VQVAE2(base.GenerativeModel):
+class VectorQuantizedVAE2(base.GenerativeModel):
     """The VQ-VAE-2 model with a latent hierarchy of depth 2."""
 
     def __init__(
@@ -31,7 +31,7 @@ class VQVAE2(base.GenerativeModel):
         n_embeddings=128,
         embedding_dim=16,
     ):
-        """Initializes a new VQVAE2 instance.
+        """Initializes a new VectorQuantizedVAE2 instance.
 
         Args:
             in_channels: Number of input channels.
@@ -136,7 +136,7 @@ def reproduce(
             batch_size, normalize=True
         )
 
-    model = models.VQVAE2(
+    model = models.VectorQuantizedVAE(
         in_channels=3,
         out_channels=3,
         hidden_channels=128,

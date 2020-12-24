@@ -18,7 +18,7 @@ from pytorch_generative.models import base
 from pytorch_generative.models import vaes
 
 
-class VQVAE(base.GenerativeModel):
+class VectorQuantizedVAE(base.GenerativeModel):
     """The Vector Quantized Variational Autoencoder (VQ-VAE) model."""
 
     def __init__(
@@ -31,7 +31,7 @@ class VQVAE(base.GenerativeModel):
         n_embeddings=128,
         embedding_dim=16,
     ):
-        """Initializes a new VQVAE instance.
+        """Initializes a new VectorQuantizedVAE instance.
 
         Args:
             in_channels: Number of input channels.
@@ -105,7 +105,7 @@ def reproduce(
             batch_size, normalize=True
         )
 
-    model = models.VQVAE(
+    model = models.VectorQuantizedVAE(
         in_channels=3,
         out_channels=3,
         hidden_channels=128,

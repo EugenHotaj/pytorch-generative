@@ -62,10 +62,10 @@ class IntegrationTests(unittest.TestCase):
     def test_VeryDeepVAE(self):
         self._test_integration(models.vd_vae, in_size=32)
 
-    def test_VQVAE(self):
+    def test_VectorQuantizedVAE(self):
         self._test_integration(models.vq_vae, in_channels=3)
 
-    def test_VQVAE2(self):
+    def test_VectorQuantizedVAE2(self):
         self._test_integration(models.vq_vae_2, in_channels=3)
 
 

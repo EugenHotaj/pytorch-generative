@@ -2,9 +2,9 @@
 
 `pytorch-generative` is a Python library which makes generative modeling in PyTorch easier by providing:
 
-* high quality reference implementations of SOTA generative models 
+* high quality reference implementations of SOTA generative [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) 
 * useful abstractions of common [building blocks](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) found in the literature
-* utilities for training, debugging, and working with Google Colab
+* utilities for [training](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/trainer.py), [debugging](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/debug.py), and working with [Google Colab](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/colab_utils.py)
 
 To get started, click on one of the links below.
 * [Example - ImageGPT](#example---imagegpt)
@@ -50,12 +50,12 @@ class TransformerBlock(nn.Module):
     super().__init__()
     self._ln1 = pg_nn.NCHWLayerNorm(n_channels)
     self._ln2 = pg_nn.NCHWLayerNorm(n_channels)
-    self._attn = pg_nn.MaskedAttention(
+    self._attn = pg_nn.CausalAttention(
         in_channels=n_channels,
         embed_channels=n_channels,
         out_channels=n_channels,
         n_heads=n_attention_heads,
-        is_causal=False)
+        mask_center=False)
     self._out = nn.Sequential(
         nn.Conv2d(
             in_channels=n_channels, 
@@ -94,8 +94,8 @@ class ImageGPT(nn.Module):
     """
     super().__init__()
     self._pos = nn.Parameter(torch.zeros(1, in_channels, in_size, in_size))
-    self._input = pg_nn.MaskedConv2d(
-        is_causal=True,
+    self._input = pg_nn.CausalConv2d(
+        mask_center=True,
         in_channels=in_channels,
         out_channels=n_embedding_channels,
         kernel_size=3,
@@ -140,6 +140,7 @@ class ImageGPT(nn.Module):
 | Algorithm | Our Results | Links |
 | --- | ---| --- |
 | VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae.py), [Paper](https://arxiv.org/pdf/1312.6114.pdf) |
+| VD-VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |
 | VQ-VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py), [Paper](https://arxiv.org/pdf/1711.00937.pdf) |
 | VQ-VAE-2 | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae_2.py), [Paper](https://arxiv.org/pdf/1906.00446.pdf) |
 

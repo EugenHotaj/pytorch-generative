@@ -219,10 +219,8 @@ class Trainer:
                     self._time_taken / self._examples_processed * 1000,
                     self._step,
                 )
-                self._summary_writer.add_scalar(
-                    "progress/epoch", self._epoch, self._step
-                )
-                self._summary_writer.add_scalar("progress/step", self._step, self._step)
+                self._summary_writer.add_scalar("speed/epoch", self._epoch, self._step)
+                self._summary_writer.add_scalar("speed/step", self._step, self._step)
                 self._step += 1
 
             # Evaluate

@@ -120,13 +120,11 @@ class ImageGPT(nn.Module):
 
  `pytorch-generative` supports the following algorithms. 
 
-*Note:* Our reported binary MNIST results may be optimistic. Instead of using a fixed dataset, we resample a new binary MNIST dataset on every epoch. We can think of this as using data augmentation which helps our models learn better.
+We train likelihood based models on dynamically [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) and report the log likelihood in the tables below. 
 
 ### Autoregressive Models
 
-[Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats): 
-
-| Algorithm | Our Results | Links |
+| Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
 | --- | ---| --- |
 | PixelSNAIL | **78.61** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py), [Paper](http://proceedings.mlr.press/v80/chen18h/chen18h.pdf) |
 | ImageGPT | 79.17 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py), [Paper](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf)|
@@ -137,11 +135,10 @@ class ImageGPT(nn.Module):
 
 ### Variational Autoencoders
 
-[Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats): 
 
 NOTE: The results below are the (variational) lower bound on the log likelihod. 
 
-| Algorithm | Our Results | Links |
+| Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
 | --- | ---| --- |
 | VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae.py), [Paper](https://arxiv.org/abs/1312.6114) |
 | VD-VAE | <= 80.72 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |

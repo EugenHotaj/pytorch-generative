@@ -136,7 +136,7 @@ We train likelihood based models on dynamically [Binarized MNIST](https://papers
 ### Variational Autoencoders
 
 
-NOTE: The results below are the (variational) lower bound on the negative log likelihod. 
+NOTE: The results below are the (variational) lower bound on the log likelihod. 
 
 | Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
 | --- | ---| --- |

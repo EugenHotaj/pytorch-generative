@@ -69,23 +69,24 @@ class IntegrationTests(unittest.TestCase):
         self._test_integration(models.vq_vae_2, in_channels=3)
 
 
-class SmokeTests(unittest.TestCase):
-    """Unit tests for things not caught by the integration tests above."""
+class MultipleChannelsTests(unittest.TestCase):
+    """Tests models correctness when using multiple input and output channels."""
 
-    def _smoke_test(self, model):
+    def _test_multiple_channels(self, model, conditional_sample=False):
         # Test forward().
-        batch = torch.rand(2, 3, 5, 5)
+        batch = torch.rand(2, 3, 8, 8)
         model(batch)
 
-        # Test unconditional autoregressive sample().
+        # Test unconditional sample().
         model.sample(n_samples=2)
 
-        # Test that conditional autoregressive sample() only modifies pixels < 0.
-        batch[:, :, 1:, :] = -1
-        sample = model.sample(conditioned_on=batch)
-        self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
+        # Test that conditional sample() only modifies pixels < 0.
+        if conditional_sample:
+            batch[:, :, 1:, :] = -1
+            sample = model.sample(conditioned_on=batch)
+            self.assertTrue((sample[:, :, 0, :] == batch[:, :, 0, :]).all())
 
-    def test_PixelCNN_multiple_channels(self):
+    def test_PixelCNN(self):
         model = models.PixelCNN(
             in_channels=3,
             out_channels=3,
@@ -93,15 +94,15 @@ class SmokeTests(unittest.TestCase):
             residual_channels=1,
             head_channels=1,
         )
-        self._smoke_test(model)
+        self._test_multiple_channels(model, conditional_sample=True)
 
-    def test_GatedPixelCNN_multiple_channels(self):
+    def test_GatedPixelCNN(self):
         model = models.GatedPixelCNN(
             in_channels=3, out_channels=3, n_gated=1, gated_channels=1, head_channels=1
         )
-        self._smoke_test(model)
+        self._test_multiple_channels(model, conditional_sample=True)
 
-    def test_PixelSNAIL_multiple_channels(self):
+    def test_PixelSNAIL(self):
         model = models.PixelSNAIL(
             in_channels=3,
             out_channels=3,
@@ -111,15 +112,42 @@ class SmokeTests(unittest.TestCase):
             attention_key_channels=1,
             attention_value_channels=1,
         )
-        self._smoke_test(model)
+        self._test_multiple_channels(model, conditional_sample=True)
 
-    def test_ImageGPT_multiple_channels(self):
+    def test_ImageGPT(self):
         model = models.ImageGPT(
             in_channels=3,
             out_channels=3,
-            in_size=5,
+            in_size=8,
             n_transformer_blocks=1,
             n_attention_heads=2,
             n_embedding_channels=4,
         )
-        self._smoke_test(model)
+        self._test_multiple_channels(model, conditional_sample=True)
+
+    def test_VAE(self):
+        model = models.VAE(
+            in_channels=3,
+            out_channels=3,
+            latent_channels=1,
+            strides=[2, 2],
+            hidden_channels=1,
+            residual_channels=1,
+        )
+        self._test_multiple_channels(model)
+
+    def test_VeryDeepVAE(self):
+        from pytorch_generative.models.vd_vae import StackConfig
+
+        model = models.VeryDeepVAE(
+            in_channels=3,
+            out_channels=3,
+            input_resolution=8,
+            stack_configs=[
+                StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+                StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+            ],
+            latent_channels=1,
+            bottleneck_channels=1,
+        )
+        self._test_multiple_channels(model)

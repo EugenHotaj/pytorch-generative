@@ -21,9 +21,9 @@ class VAE(base.GenerativeModel):
         self,
         in_channels=1,
         out_channels=1,
-        latent_channels=2,
+        latent_channels=16,
         strides=[4],
-        hidden_channels=128,
+        hidden_channels=64,
         residual_channels=32,
     ):
         """Initializes a new VAE instance.
@@ -105,7 +105,7 @@ class VAE(base.GenerativeModel):
 
 
 def reproduce(
-    n_epochs=457, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
+    n_epochs=500, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
 ):
     """Training script with defaults to reproduce results.
 
@@ -138,27 +138,30 @@ def reproduce(
     model = models.VAE(
         in_channels=1,
         out_channels=1,
-        latent_channels=2,
-        strides=[4, 4],
-        hidden_channels=128,
+        latent_channels=16,
+        strides=[2, 2, 2, 2],
+        hidden_channels=64,
         residual_channels=32,
     )
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    scheduler = lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda _: 0.999977)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
     def loss_fn(x, _, preds):
-        preds, vae_loss = preds
+        preds, kl_div = preds
         recon_loss = F.binary_cross_entropy_with_logits(preds, x, reduction="none")
-        recon_loss = recon_loss.mean(dim=(1, 2, 3))
-        loss = recon_loss + vae_loss
+        recon_loss = recon_loss.sum(dim=(1, 2, 3))
+        elbo = recon_loss + kl_div
+
         return {
             "recon_loss": recon_loss.mean(),
-            "vae_loss": vae_loss.mean(),
-            "loss": loss.mean(),
+            "kl_div": kl_div.mean(),
+            "loss": elbo.mean(),
         }
 
     def sample_fn(model):
-        return torch.sigmoid(model.sample(n_samples=16))
+        sample = torch.sigmoid(model.sample(n_samples=16))
+        return torch.where(
+            sample < 0.5, torch.zeros_like(sample), torch.ones_like(sample)
+        )
 
     model_trainer = trainer.Trainer(
         model=model,
@@ -166,7 +169,6 @@ def reproduce(
         optimizer=optimizer,
         train_loader=train_loader,
         eval_loader=test_loader,
-        lr_scheduler=scheduler,
         sample_epochs=1,
         sample_fn=sample_fn,
         log_dir=log_dir,

@@ -137,10 +137,14 @@ class ImageGPT(nn.Module):
 
 ### Variational Autoencoders
 
+[Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats): 
+
+NOTE: The results below are the (variational) lower bound on the log likelihod. 
+
 | Algorithm | Our Results | Links |
 | --- | ---| --- |
 | VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae.py), [Paper](https://arxiv.org/abs/1312.6114) |
-| VD-VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |
+| VD-VAE | <= 80.72 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |
 | VQ-VAE | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py), [Paper](https://arxiv.org/abs/1711.00937) |
 | VQ-VAE-2 | TODO | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae_2.py), [Paper](https://arxiv.org/abs/1906.00446) |
 

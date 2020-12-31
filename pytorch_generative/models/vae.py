@@ -92,8 +92,8 @@ class VAE(base.GenerativeModel):
         var = torch.exp(log_var)
         latents = mean + torch.sqrt(var) * torch.randn_like(var)
         # NOTE: This KL divergence is only applicable under the assumption that the
-        # prior ~ N(0, 1) and the latents are Gaussian.
-        kl_div = -0.5 * (1 + log_var - mean ** 2 - var).mean(dim=(1, 2, 3))
+        # prior ~ N(0, 1) and the posterior are Gaussian.
+        kl_div = -0.5 * (1 + log_var - mean ** 2 - var).sum(dim=(1, 2, 3))
         return self._decoder(latents), kl_div
 
     def sample(self, n_samples):

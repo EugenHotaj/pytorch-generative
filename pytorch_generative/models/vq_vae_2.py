@@ -91,6 +91,13 @@ class VectorQuantizedVAE2(base.GenerativeModel):
         )
 
     def forward(self, x):
+        """Computes the forward pass.
+
+        Args:
+            x: Batch of inputs.
+        Returns:
+            Tuple of the forward pass result and the total quantization loss.
+        """
         encoded_b = self._encoder_b(x)
         encoded_t = self._encoder_t(encoded_b)
 

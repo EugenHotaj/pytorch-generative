@@ -50,6 +50,15 @@ class VAE(base.GenerativeModel):
         )
 
     def forward(self, x):
+        """Computes the forward pass.
+
+        Args:
+            x: Batch of inputs.
+        Returns:
+            Tuple of the forward pass result and the total KL Divergence between the
+            prior and the posterior. Note that the KL Divergence is NOT normalized by
+            the dimension of the input.
+        """
         # NOTE: We use log_var (instead of var or std) for stability and easier
         # optimization during training.
         mean, log_var = torch.split(self._encoder(x), self._latent_channels, dim=1)

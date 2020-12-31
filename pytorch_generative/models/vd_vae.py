@@ -377,7 +377,16 @@ class VeryDeepVAE(base.GenerativeModel):
         )
 
     def forward(self, x):
-        n, c, h, w = x.shape
+        """Computes the forward pass.
+
+        Args:
+            x: Batch of inputs.
+        Returns:
+            Tuple of the forward pass result and the total KL Divergence between the
+            prior and the posterior. Note that the KL Divergence is NOT normalized by
+            the dimension of the input.
+        """
+        n = x.shape[0]
 
         # Bottom up encoding.
         x = self._input(x)
@@ -397,10 +406,8 @@ class VeryDeepVAE(base.GenerativeModel):
 
         # Compute total KL Divergence.
         kl_div = torch.zeros((n,), device=self.device)
-        n_dims = np.prod((c, h, w))
         for div in kl_divs:
             kl_div += div.sum(dim=(1, 2, 3))
-        kl_div /= n_dims
 
         return self._output(x), kl_div
 
@@ -439,33 +446,45 @@ def reproduce(
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:
         train_loader, test_loader = datasets.get_mnist_loaders(
-            batch_size,
-            resize_to_32=True,
+            batch_size, dynamically_binarize=True, resize_to_32=True
         )
+
+    stack_configs = [
+        StackConfig(n_encoder_blocks=3, n_decoder_blocks=5),
+        StackConfig(n_encoder_blocks=3, n_decoder_blocks=5),
+        StackConfig(n_encoder_blocks=2, n_decoder_blocks=4),
+        StackConfig(n_encoder_blocks=2, n_decoder_blocks=3),
+        StackConfig(n_encoder_blocks=2, n_decoder_blocks=2),
+        StackConfig(n_encoder_blocks=1, n_decoder_blocks=1),
+    ]
 
     model = models.VeryDeepVAE(
         in_channels=1,
         out_channels=1,
         input_resolution=32,
+        stack_configs=stack_configs,
         latent_channels=16,
-        hidden_channels=32,
-        bottleneck_channels=8,
+        hidden_channels=64,
+        bottleneck_channels=32,
     )
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
     def loss_fn(x, _, preds):
         preds, kl_div = preds
         recon_loss = F.binary_cross_entropy_with_logits(preds, x, reduction="none")
-        recon_loss = recon_loss.mean(dim=(1, 2, 3))
-        loss = recon_loss + kl_div
+        recon_loss = recon_loss.sum(dim=(1, 2, 3))
+        elbo = recon_loss + kl_div
         return {
             "recon_loss": recon_loss.mean(),
             "kl_div": kl_div.mean(),
-            "loss": loss.mean(),
+            "loss": elbo.mean(),
         }
 
     def sample_fn(model):
-        return torch.sigmoid(model.sample(n_samples=16))
+        sample = torch.sigmoid(model.sample(n_samples=16))
+        return torch.where(
+            sample < 0.5, torch.zeros_like(sample), torch.ones_like(sample)
+        )
 
     model_trainer = trainer.Trainer(
         model=model,

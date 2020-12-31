@@ -57,7 +57,7 @@ class IntegrationTests(unittest.TestCase):
         self._test_integration(models.image_gpt)
 
     def test_VAE(self):
-        self._test_integration(models.vae)
+        self._test_integration(models.vae, in_size=32)
 
     def test_VeryDeepVAE(self):
         self._test_integration(models.vd_vae, in_size=32)

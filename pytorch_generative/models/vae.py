@@ -1,4 +1,11 @@
-"""TODO(eugenhotaj): explain."""
+"""Implementation of the Variational Autoencoder [1] model.
+
+TODO(ehotaj): Explain.
+
+References (used throughout the code):
+    [1]: https://arxiv.org/pdf/1312.6114.pdf
+"""
+
 
 import torch
 from torch import nn
@@ -15,6 +22,7 @@ class VAE(base.GenerativeModel):
         in_channels=1,
         out_channels=1,
         latent_channels=2,
+        strides=[4],
         hidden_channels=128,
         residual_channels=32,
     ):
@@ -24,30 +32,49 @@ class VAE(base.GenerativeModel):
             in_channels: Number of input channels.
             out_channels: Number of output channels.
             latent_channels: Number of channels for each latent variable.
+            strides: List of encoder/decoder strides. For each stride, we create an
+                encoder (decoder) which downsamples (upsamples) the input by the stride.
             hidden_channels: Number of channels in (non residual block) hidden layers.
             residual_channels: Number of hidden channels in residual blocks.
         """
         super().__init__()
 
         self._latent_channels = latent_channels
-        self._stride = 4
+        self._total_stride = sum(strides)
 
-        self._encoder = vaes.Encoder(
-            in_channels=in_channels,
-            out_channels=2 * self._latent_channels,
-            hidden_channels=hidden_channels,
-            residual_channels=residual_channels,
-            n_residual_blocks=2,
-            stride=self._stride,
-        )
-        self._decoder = vaes.Decoder(
-            in_channels=self._latent_channels,
-            out_channels=out_channels,
-            hidden_channels=hidden_channels,
-            residual_channels=residual_channels,
-            n_residual_blocks=2,
-            stride=self._stride,
-        )
+        encoder = []
+        for i, stride in enumerate(strides):
+            in_c = in_channels if i == 0 else hidden_channels
+            out_c = (
+                hidden_channels if i < len(strides) - 1 else 2 * self._latent_channels
+            )
+            encoder.append(
+                vaes.Encoder(
+                    in_channels=in_c,
+                    out_channels=out_c,
+                    hidden_channels=hidden_channels,
+                    residual_channels=residual_channels,
+                    n_residual_blocks=2,
+                    stride=stride,
+                )
+            )
+        self._encoder = nn.Sequential(*encoder)
+
+        decoder = []
+        for i, stride in enumerate(reversed(strides)):
+            in_c = self._latent_channels if i == 0 else hidden_channels
+            out_c = hidden_channels if i < len(strides) - 1 else out_channels
+            decoder.append(
+                vaes.Decoder(
+                    in_channels=in_c,
+                    out_channels=out_c,
+                    hidden_channels=hidden_channels,
+                    residual_channels=residual_channels,
+                    n_residual_blocks=2,
+                    stride=stride,
+                )
+            )
+        self._decoder = nn.Sequential(*decoder)
 
     def forward(self, x):
         """Computes the forward pass.
@@ -71,7 +98,7 @@ class VAE(base.GenerativeModel):
 
     def sample(self, n_samples):
         """Generates a batch of n_samples."""
-        latent_size = self._h // 2 ** (self._stride // 2)
+        latent_size = self._h // 2 ** (self._total_stride // 2)
         shape = (n_samples, self._latent_channels, latent_size, latent_size)
         latents = torch.randn(shape, device=self.device)
         return self._decoder(latents)
@@ -104,12 +131,15 @@ def reproduce(
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:
-        train_loader, test_loader = datasets.get_mnist_loaders(batch_size)
+        train_loader, test_loader = datasets.get_mnist_loaders(
+            batch_size, dynamically_binarize=True, resize_to_32=True
+        )
 
     model = models.VAE(
         in_channels=1,
         out_channels=1,
         latent_channels=2,
+        strides=[4, 4],
         hidden_channels=128,
         residual_channels=32,
     )

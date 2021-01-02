@@ -7,12 +7,40 @@
 * utilities for [training](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/trainer.py), [debugging](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/debug.py), and working with [Google Colab](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/colab_utils.py)
 
 To get started, click on one of the links below.
+* [Installation](#installation)
+* [Reproducing Results](#reproducing-results)
 * [Example - ImageGPT](#example---imagegpt)
 * [Supported Algorithms](#supported-algorithms) 
   * [Autoregressive Models](#autoregressive-models)
   * [Variational Autoencoders](#variational-autoencoders)
   * [Neural Style Transfer](#neural-style-transfer)
   * [Compositional Pattern Producing Networks](compositional-pattern-producing-networks)
+
+## Installation
+
+To install `pytorch-generative`, clone the repository and install the requirements:
+
+```shell
+git clone https://www.github.com/EugenHota/pytorch-generative
+cd pytorch-generative
+pip install -r requirements.txt
+```
+
+After installation, run the tests to sanity check that everything works:
+
+```shell
+python -m unittest discover
+```
+
+## Reproducing Results
+
+All our [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) implement a `reproduce` function with all the hyperparameters necessary to reproduce the results listed in the [supported algorithms](#supported-algorithms) section. This makes it very easy to reproduce any results using our [training script](https://github.com/EugenHotaj/pytorch-generative/tree/master/train.py), for example:
+
+```
+python train.py --model image_gpt --use-cuda
+```
+
+To run the model on a different dataset, with different hyperparameters, etc, simply modify its `reproduce` function and rerun with the command above.
 
 ## Example - ImageGPT
 
@@ -21,12 +49,13 @@ Supported models are implemented as PyTorch Modules and are easy to use:
 ```python
 from pytorch_generative import models
 
+... # Data loading code.
+
 model = models.ImageGPT(in_channels=1, out_channels=1, in_size=28)
-...
-model(data)
+model(train_loader)
 ```
 
-Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) can be used to write models from scratch. For example, we implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/)-like model below:
+Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) can be used to write models from scratch. We show how to implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/) model below:
 
 ```python
 
@@ -120,7 +149,7 @@ class ImageGPT(nn.Module):
 
  `pytorch-generative` supports the following algorithms. 
 
-We train likelihood based models on dynamically [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) and report the log likelihood in the tables below. 
+We train likelihood based models on dynamically [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) and report the log likelihood in the tables below.
 
 ### Autoregressive Models
 

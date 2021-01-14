@@ -5,6 +5,7 @@
 * high quality reference implementations of SOTA generative [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) 
 * useful abstractions of common [building blocks](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) found in the literature
 * utilities for [training](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/trainer.py), [debugging](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/debug.py), and working with [Google Colab](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/colab_utils.py)
+* integration with TensorBoard for easy metrics visualization
 
 To get started, click on one of the links below.
 * [Installation](#installation)
@@ -37,10 +38,16 @@ python -m unittest discover
 All our [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) implement a `reproduce` function with all the hyperparameters necessary to reproduce the results listed in the [supported algorithms](#supported-algorithms) section. This makes it very easy to reproduce any results using our [training script](https://github.com/EugenHotaj/pytorch-generative/tree/master/train.py), for example:
 
 ```
-python train.py --model image_gpt --use-cuda
+python train.py --model image_gpt --logdir /tmp/run
 ```
 
-To run the model on a different dataset, with different hyperparameters, etc, simply modify its `reproduce` function and rerun with the command above.
+Training metrics will periodically be logged to TensorBoard for easy visualization. To view these metrics, launch a local TensorBoard server:
+
+```
+tensorboard --logdir /tmp/run
+```
+
+To run the model on a different dataset, with different hyperparameters, etc, simply modify its `reproduce` function and rerun the commands above.
 
 ## Example - ImageGPT
 

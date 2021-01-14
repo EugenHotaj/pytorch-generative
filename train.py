@@ -22,7 +22,7 @@ MODEL_DICT = {
 def main(args):
     device = "cuda" if args.use_cuda else "cpu"
     MODEL_DICT[args.model].reproduce(
-        args.n_epochs, args.batch_size, args.log_dir, device
+        args.n_epochs, args.batch_size, args.logdir, device
     )
 
 
@@ -45,9 +45,9 @@ if __name__ == "__main__":
         default=128,
     )
     parser.add_argument(
-        "--log-dir",
+        "--logdir",
         type=str,
-        help="the directory where to log data",
+        help="the directory where to log model parameters and TensorBoard metrics",
         default="/tmp/run",
     )
     parser.add_argument("--use-cuda", help="whether to use CUDA", action="store_true")

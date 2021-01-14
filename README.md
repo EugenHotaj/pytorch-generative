@@ -38,7 +38,7 @@ python -m unittest discover
 All our [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) implement a `reproduce` function with all the hyperparameters necessary to reproduce the results listed in the [supported algorithms](#supported-algorithms) section. This makes it very easy to reproduce any results using our [training script](https://github.com/EugenHotaj/pytorch-generative/tree/master/train.py), for example:
 
 ```
-python train.py --model image_gpt --logdir /tmp/run
+python train.py --model image_gpt --logdir /tmp/run --use-cuda
 ```
 
 Training metrics will periodically be logged to TensorBoard for easy visualization. To view these metrics, launch a local TensorBoard server:

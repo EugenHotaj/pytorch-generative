@@ -59,7 +59,7 @@ from pytorch_generative import models
 ... # Data loading code.
 
 model = models.ImageGPT(in_channels=1, out_channels=1, in_size=28)
-model(train_loader)
+model(batch)
 ```
 
 Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) can be used to write models from scratch. We show how to implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/) model below:

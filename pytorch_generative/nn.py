@@ -1,10 +1,12 @@
 """Modules, funcitons, and  building blocks for Generative Neural Networks.
 
 References (used throughout the code):
-  [1]: https://arxiv.org/abs/1601.06759
-  [2]: https://arxiv.org/abs/1712.09763
-  [3]: https://arxiv.org/abs/2006.16236
-  [4]: https://arxiv.org/abs/1711.00937
+    [1]: https://arxiv.org/abs/1601.06759
+    [2]: https://arxiv.org/abs/1712.09763
+    [3]: https://arxiv.org/abs/2006.16236
+    [4]: https://arxiv.org/abs/1711.00937
+    [5]: https://arxiv.org/abs/1606.05328
+    [6]: https://arxiv.org/abs/2003.04887
 """
 
 import functools
@@ -41,9 +43,10 @@ def image_positional_encoding(shape):
 
 
 class GatedActivation(nn.Module):
-    """Activation function which computes actiation_fn(f) * sigmoid(g).
+    """Gated activation function as introduced in [5].
 
-    The f and g correspond to the top 1/2 and bottom 1/2 of the input channels.
+    The function computes actiation_fn(f) * sigmoid(g). The f and g correspond to the
+    top 1/2 and bottom 1/2 of the input channels.
     """
 
     def __init__(self, activation_fn=torch.tanh):
@@ -69,6 +72,27 @@ class NCHWLayerNorm(nn.LayerNorm):
         x = x.permute(0, 2, 3, 1)
         x = super().forward(x)
         return x.permute(0, 3, 1, 2)
+
+
+class ReZeroWrapper(nn.Module):
+    """Wraps a given module into a ReZero [6] function.
+
+    ReZero computes `x + alpha * module(x)` for some input `x`. `alpha` is a trainable
+    scalar parameter which is initialized to `0`. Note that `module(x)` must have the
+    same output shape as the input `x`.
+    """
+
+    def __init__(self, module):
+        """Initializes a new ReZeroWrapper.
+
+        Args:
+            module: The module to wrap.
+        """
+        self._module = module
+        self._alpha = nn.Parameter(torch.tensor([0.0]))
+
+    def forward(x):
+        return x + self._alpha * self._module(x)
 
 
 class CausalConv2d(nn.Conv2d):

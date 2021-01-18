@@ -13,6 +13,7 @@ from pytorch_generative.models.nade import NADE
 from pytorch_generative.models.pixel_cnn import PixelCNN
 from pytorch_generative.models.pixel_snail import PixelSNAIL
 from pytorch_generative.models.vae import VAE
+from pytorch_generative.models.beta_vae import BetaVAE
 from pytorch_generative.models.vd_vae import VeryDeepVAE
 from pytorch_generative.models.vq_vae import VectorQuantizedVAE
 from pytorch_generative.models.vq_vae_2 import VectorQuantizedVAE2
@@ -50,6 +51,7 @@ __all__ = [
     "PixelCNN",
     "PixelSNAIL",
     "VAE",
+    "BetaVAE",
     "VeryDeepVAE",
     "VectorQuantizedVAE",
     "VectorQuantizedVAE2",

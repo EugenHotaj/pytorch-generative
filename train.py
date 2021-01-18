@@ -13,6 +13,7 @@ MODEL_DICT = {
     "pixel_cnn": pg.models.pixel_cnn,
     "pixel_snail": pg.models.pixel_snail,
     "vae": pg.models.vae,
+    "vae": pg.models.beta_vae,
     "vd_vae": pg.models.vd_vae,
     "vq_vae": pg.models.vq_vae,
     "vq_vae_2": pg.models.vq_vae_2,

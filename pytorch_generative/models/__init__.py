@@ -1,4 +1,4 @@
-"""Models available in PyTorch Generative."""
+"""Models available in pytorch-generative."""
 
 import torch
 from torch import distributions

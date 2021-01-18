@@ -3,7 +3,7 @@
 `pytorch-generative` is a Python library which makes generative modeling in PyTorch easier by providing:
 
 * high quality reference implementations of SOTA generative [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) 
-* useful abstractions of common [building blocks](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) found in the literature
+* useful abstractions of common [building blocks](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn) found in the literature
 * utilities for [training](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/trainer.py), [debugging](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/debug.py), and working with [Google Colab](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/colab_utils.py)
 * integration with TensorBoard for easy metrics visualization
 
@@ -62,7 +62,7 @@ model = models.ImageGPT(in_channels=1, out_channels=1, in_size=28)
 model(batch)
 ```
 
-Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn.py) can be used to write models from scratch. We show how to implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/) model below:
+Alternatively, lower level building blocks in [pytorch_generative.nn](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/nn) can be used to write models from scratch. We show how to implement a convolutional [ImageGPT](https://openai.com/blog/image-gpt/) model below:
 
 ```python
 

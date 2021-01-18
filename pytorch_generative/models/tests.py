@@ -60,7 +60,7 @@ class IntegrationTests(unittest.TestCase):
         self._test_integration(models.vae, in_size=32)
 
     def test_BetaVAE(self):
-        self._test_integration(models.vae, in_size=32)
+        self._test_integration(models.beta_vae, in_size=32)
 
     def test_VeryDeepVAE(self):
         self._test_integration(models.vd_vae, in_size=32)

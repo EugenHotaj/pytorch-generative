@@ -121,6 +121,7 @@ def reproduce(
             evaluation loaders if not 'None'. Do not use unless you're writing unit
             tests.
     """
+    import torch
     from torch import optim
     from torch.nn import functional as F
 

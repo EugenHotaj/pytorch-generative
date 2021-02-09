@@ -9,6 +9,7 @@
 
 To get started, click on one of the links below.
 * [Installation](#installation)
+* [Google Colab](#google-colab)
 * [Reproducing Results](#reproducing-results)
 * [Example - ImageGPT](#example---imagegpt)
 * [Supported Algorithms](#supported-algorithms) 
@@ -21,7 +22,7 @@ To get started, click on one of the links below.
 
 To install `pytorch-generative`, clone the repository and install the requirements:
 
-```shell
+```
 git clone https://www.github.com/EugenHota/pytorch-generative
 cd pytorch-generative
 pip install -r requirements.txt
@@ -29,8 +30,25 @@ pip install -r requirements.txt
 
 After installation, run the tests to sanity check that everything works:
 
-```shell
+```
 python -m unittest discover
+```
+
+## Google Colab
+
+To use `pytorch-generative` in Google Colab, run the following commands in the first cell of your Notebook:
+
+```
+!git clone https://www.github.com/EugenHotaj/pytorch-generative
+mv pytorch-generative/pytorch_generative pytorch-generative
+```
+
+You can then import `pytorch-generative` and use it like any other library:
+
+```python
+import pytorch_generative as pg_nn
+from pytorch_generative import models
+...
 ```
 
 ## Reproducing Results

@@ -61,14 +61,9 @@ class Trainer:
                 cleaned up automatically).
             save_checkpoint_epochs: Number of epochs to wait between checkpoints. Note
                 that this does not affect TensorBoard logging frequency.
-            device: The device to place the model and data. Either string or
-                torch.device.
+            device: Either a string indicating the device or a list of cuda device ids
+                to use for data parallel training.
         """
-        # Stateful objects that need to be saved.
-        self.model = model.to(device)
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
-
         self.loss_fn = loss_fn
         self.train_loader = train_loader
         self.eval_loader = eval_loader
@@ -76,7 +71,6 @@ class Trainer:
         self.skip_grad_norm = skip_grad_norm
         self.log_dir = log_dir or tempfile.mkdtemp()
         self.save_checkpoint_epochs = save_checkpoint_epochs
-        self.device = torch.device(device) if isinstance(device, str) else device
 
         self.sample_epochs = sample_epochs
         self.sample_fn = sample_fn
@@ -84,6 +78,20 @@ class Trainer:
             msg = "sample_fn cannot be None if sample_epochs is not None"
             assert self.sample_fn, msg
 
+        # TOOD(eugenhotaj): Remove "device" and instead expose a "device_ids" argument
+        # to Trainer where device_ids=None trains on CPU.
+        if isinstance(device, str):
+            self.device = device
+        else:
+            assert len(device) > 0, "'device' list cannot be empty."
+            self.device = f"cuda:{device[0]}"
+            if len(device) > 1:
+                model = nn.DataParallel(model, device_ids=device)
+
+        # Trainer state saved during checkpointing.
+        self.model = model.to(self.device)
+        self.optimizer = optimizer
+        self.lr_scheduler = lr_scheduler
         self._step = 0
         self._epoch = 0
         self._examples_processed = 0

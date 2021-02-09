@@ -9,8 +9,8 @@
 
 To get started, click on one of the links below.
 * [Installation](#installation)
-* [Google Colab](#google-colab)
 * [Reproducing Results](#reproducing-results)
+* [Google Colab](#google-colab)
 * [Example - ImageGPT](#example---imagegpt)
 * [Supported Algorithms](#supported-algorithms) 
   * [Autoregressive Models](#autoregressive-models)
@@ -34,23 +34,6 @@ After installation, run the tests to sanity check that everything works:
 python -m unittest discover
 ```
 
-## Google Colab
-
-To use `pytorch-generative` in Google Colab, run the following commands in the first cell of your Notebook:
-
-```
-!git clone https://www.github.com/EugenHotaj/pytorch-generative
-mv pytorch-generative/pytorch_generative pytorch-generative
-```
-
-You can then import `pytorch-generative` and use it like any other library:
-
-```python
-import pytorch_generative as pg_nn
-from pytorch_generative import models
-...
-```
-
 ## Reproducing Results
 
 All our [models](https://github.com/EugenHotaj/pytorch-generative/tree/master/pytorch_generative/models) implement a `reproduce` function with all the hyperparameters necessary to reproduce the results listed in the [supported algorithms](#supported-algorithms) section. This makes it very easy to reproduce any results using our [training script](https://github.com/EugenHotaj/pytorch-generative/tree/master/train.py), for example:
@@ -66,6 +49,23 @@ tensorboard --logdir /tmp/run
 ```
 
 To run the model on a different dataset, with different hyperparameters, etc, simply modify its `reproduce` function and rerun the commands above.
+
+## Google Colab
+
+To use `pytorch-generative` in Google Colab, clone the repository and move it into the top-level directory:
+
+```
+!git clone https://www.github.com/EugenHotaj/pytorch-generative
+!mv pytorch-generative/pytorch_generative pytorch-generative
+```
+
+You can then import `pytorch-generative` like any other library:
+
+```python
+import pytorch_generative as pg_nn
+from pytorch_generative import models
+...
+```
 
 ## Example - ImageGPT
 

@@ -1,7 +1,9 @@
 """Utilities to train PyTorch models with less boilerplate."""
 
 import collections
+import glob
 import os
+import re
 import tempfile
 import time
 
@@ -95,30 +97,45 @@ class Trainer:
     def _save_checkpoint(self):
         if self._epoch % self.save_checkpoint_epochs != 0:
             return
-
-        torch.save(self.model.state_dict(), self._path("model_state"))
-        torch.save(self.optimizer.state_dict(), self._path("optimizer_state"))
+        checkpoint = {
+            "model": self.model.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "step": self._step,
+            "epoch": self._epoch,
+            "examples_processed": self._examples_processed,
+            "time_taken": self._time_taken,
+        }
         if self.lr_scheduler is not None:
-            torch.save(self.lr_scheduler.state_dict(), self._path("lr_scheduler_state"))
-        # TODO(eugenhotaj): Instead of saving these internal counters one at a
-        # time, maybe we can save them as a dictionary.
-        torch.save(self._step, self._path("step"))
-        torch.save(self._epoch, self._path("epoch"))
-        torch.save(self._examples_processed, self._path("examples_processed"))
-        torch.save(self._time_taken, self._path("time_taken"))
+            checkpoint["lr_scheduler"] = self.lr_scheduler.state_dict()
+        # TODO(eugenhotaj): Add an option to keep only the last n checkpoints.
+        torch.save(checkpoint, self._path(f"trainer_state_{self._epoch}.ckpt"))
 
-    def load_from_checkpoint(self):
-        """Attempts to load Trainer state from the internal log_dir."""
-        self.model.load_state_dict(torch.load(self._path("model_state")))
-        self.optimizer.load_state_dict(torch.load(self._path("optimizer_state")))
+    def _find_latest_epoch(self):
+        files = glob.glob(self._path("trainer_state_[0-9]*.ckpt"))
+        epochs = sorted([int(re.findall(r"\d+", f)[0]) for f in files])
+        if not epochs:
+            raise FileNotFoundError(f"No checkpoints found in {self.log_dir}.")
+        return epochs[-1]
+
+    def restore_checkpoint(self, epoch=None):
+        """Restores the Trainer's state using self.log_dir.
+
+        Args:
+            epoch: Epoch from which to restore the Trainer's state. If None, uses the
+                latest available epoch.
+        """
+        epoch = epoch or self._find_latest_epoch()
+        checkpoint = torch.load(self._path(f"trainer_state_{epoch}.ckpt"))
+
+        self.model.load_state_dict(checkpoint["model"])
+        self.optimizer.load_state_dict(checkpoint["optimizer"])
+        self._step = checkpoint["step"]
+        self._epoch = checkpoint["epoch"]
+        self._examples_processed = checkpoint["examples_processed"]
+        self._time_taken = checkpoint["time_taken"]
         if self.lr_scheduler is not None:
-            self.lr_scheduler.load_state_dict(
-                torch.load(self._path("lr_scheduler_state"))
-            )
-        self._step = torch.load(self._path("step"))
-        self._epoch = torch.load(self._path("epoch"))
-        self._examples_processed = torch.load(self._path("examples_processed"))
-        self._time_taken = torch.load(self._path("time_taken"))
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+
         # NOTE(eugenhotaj): We need to replace the SummaryWriter and ensure any
         # logs written after the last saved checkpoint are purged.
         self._summary_writer.close()
@@ -188,10 +205,21 @@ class Trainer:
             loss = self._get_loss_dict(self.eval_one_batch(x, y))
             return {k: v.item() for k, v in loss.items()}
 
-    def interleaved_train_and_eval(self, n_epochs):
-        """Trains and evaluates (after each epoch) for n_epochs."""
+    def interleaved_train_and_eval(self, max_epochs, restore=True):
+        """Trains and evaluates (after each epoch).
 
-        for _ in range(n_epochs):
+        Args:
+            max_epochs: Maximum number of epochs to train for.
+            restore: Wether to continue training from an existing checkpoint in
+                self.log_dir.
+        """
+        if restore:
+            try:
+                self.restore_checkpoint()
+            except FileNotFoundError:
+                pass  # No checkpoint found in self.log_dir; train from scratch.
+
+        for _ in range(max_epochs - self._epoch):
             start_time = time.time()
 
             # Train.

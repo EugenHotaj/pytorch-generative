@@ -21,7 +21,7 @@ MODEL_DICT = {
 
 
 def main(args):
-    device = "cuda" if args.use_cuda else "cpu"
+    device = list(range(args.n_gpus)) or "cpu"
     MODEL_DICT[args.model].reproduce(
         args.n_epochs, args.batch_size, args.logdir, device
     )
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         choices=list(MODEL_DICT.keys()),
     )
     parser.add_argument(
-        "--n-epochs", type=int, help="number of training epochs", default=1
+        "--epochs", type=int, help="number of training epochs", default=1
     )
     parser.add_argument(
         "--batch-size",
@@ -51,7 +51,9 @@ if __name__ == "__main__":
         help="the directory where to log model parameters and TensorBoard metrics",
         default="/tmp/run",
     )
-    parser.add_argument("--use-cuda", help="whether to use CUDA", action="store_true")
+    parser.add_argument(
+        "--n-gpus", type=int, help="number of GPUs to use for training", default=0
+    )
     args = parser.parse_args()
 
     main(args)

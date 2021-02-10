@@ -8,6 +8,7 @@ import tempfile
 import time
 
 import torch
+from torch import nn
 from torch.nn import utils
 from torch.utils import tensorboard
 

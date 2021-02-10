@@ -21,7 +21,7 @@ MODEL_DICT = {
 
 
 def main(args):
-    device = list(range(args.n_gpus)) or "cpu"
+    device = list(range(args.gpus)) or "cpu"
     MODEL_DICT[args.model].reproduce(
         args.n_epochs, args.batch_size, args.logdir, device
     )

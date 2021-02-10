@@ -23,7 +23,7 @@ MODEL_DICT = {
 def main(args):
     device = list(range(args.gpus)) or "cpu"
     MODEL_DICT[args.model].reproduce(
-        args.n_epochs, args.batch_size, args.logdir, device
+        args.epochs, args.batch_size, args.logdir, device
     )
 
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         default="/tmp/run",
     )
     parser.add_argument(
-        "--n-gpus", type=int, help="number of GPUs to use for training", default=0
+        "--gpus", type=int, help="number of GPUs to use for training", default=0
     )
     args = parser.parse_args()
 

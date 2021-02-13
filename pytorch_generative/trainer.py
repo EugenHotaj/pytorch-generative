@@ -85,9 +85,9 @@ class Trainer:
 
         if n_gpus > 1:
             assert device_id is not None, "'device_id' must be provided if n_gpus > 1."
-            self.device, self.device_id = f"cuda:{device_id}", device_id
-            self.model = model.to(device)
-            model = nn.DistributedDataParallel(
+            self.device, self.device_id = f"cuda", device_id
+            self.model = model.to(self.device)
+            model = parallel.DistributedDataParallel(
                 self.model, device_ids=[self.device_id], output_device=self.device_id
             )
         else:

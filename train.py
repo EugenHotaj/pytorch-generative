@@ -1,5 +1,6 @@
 """Main training script for models."""
 
+import os
 import argparse
 
 import torch
@@ -24,7 +25,7 @@ MODEL_DICT = {
 def _worker(local_rank, *args):
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "12345"
-    os.environ["CUDA_VISIBLE_DEVICES"] = local_rank
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(local_rank)
     torch.distributed.init_process_group(
         backend="nccl",
         world_size=args[-1],
@@ -36,7 +37,7 @@ def _worker(local_rank, *args):
 
 def main(args):
     if args.gpus > 1:
-        worker_args = args.epochs, args.batch_size, args.logdir, args.gpus
+        worker_args = model, args.epochs, args.batch_size, args.logdir, args.gpus
         torch.multiprocessing.spawn(_worker, worker_args, nprocs=args.gpus)
     MODEL_DICT[args.model].reproduce(args.epochs, args.batch_size, args.logdir)
 

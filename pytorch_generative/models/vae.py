@@ -105,7 +105,12 @@ class VAE(base.GenerativeModel):
 
 
 def reproduce(
-    n_epochs=500, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
+    n_epochs=500,
+    batch_size=128,
+    log_dir="/tmp/run",
+    n_gpus=0,
+    device_id=None,
+    debug_loader=None,
 ):
     """Training script with defaults to reproduce results.
 
@@ -172,6 +177,7 @@ def reproduce(
         sample_epochs=1,
         sample_fn=sample_fn,
         log_dir=log_dir,
-        device=device,
+        n_gpus=n_gpus,
+        device_id=device_id,
     )
     model_trainer.interleaved_train_and_eval(n_epochs)

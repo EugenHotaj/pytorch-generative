@@ -140,7 +140,12 @@ class MADE(base.AutoregressiveModel):
 
 
 def reproduce(
-    n_epochs=427, batch_size=128, log_dir="/tmp/run", device="cuda", debug_loader=None
+    n_epochs=85,
+    batch_size=64,
+    log_dir="/tmp/run",
+    n_gpus=1,
+    device_id=0,
+    debug_loader=None,
 ):
     """Training script with defaults to reproduce results.
 
@@ -151,7 +156,8 @@ def reproduce(
         n_epochs: Number of epochs to train for.
         batch_size: Batch size to use for training and evaluation.
         log_dir: Directory where to log trainer state and TensorBoard summaries.
-        device: Device to train on (either 'cuda' or 'cpu').
+        n_gpus: Number of GPUs to use for training the model. If 0, uses CPU.
+        device_id: The device_id of the current GPU when training on multiple GPUs.
         debug_loader: Debug DataLoader which replaces the default training and
             evaluation loaders if not 'None'. Do not use unless you're writing unit
             tests.
@@ -186,6 +192,7 @@ def reproduce(
         train_loader=train_loader,
         eval_loader=test_loader,
         log_dir=log_dir,
-        device=device,
+        n_gpus=n_gpus,
+        device_id=device_id,
     )
     model_trainer.interleaved_train_and_eval(n_epochs)

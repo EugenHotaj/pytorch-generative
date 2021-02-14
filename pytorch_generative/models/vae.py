@@ -105,11 +105,11 @@ class VAE(base.GenerativeModel):
 
 
 def reproduce(
-    n_epochs=500,
+    n_epochs=457,
     batch_size=128,
     log_dir="/tmp/run",
-    n_gpus=0,
-    device_id=None,
+    n_gpus=1,
+    device_id=0,
     debug_loader=None,
 ):
     """Training script with defaults to reproduce results.
@@ -121,7 +121,8 @@ def reproduce(
         n_epochs: Number of epochs to train for.
         batch_size: Batch size to use for training and evaluation.
         log_dir: Directory where to log trainer state and TensorBoard summaries.
-        device: Device to train on (either 'cuda' or 'cpu').
+        n_gpus: Number of GPUs to use for training the model. If 0, uses CPU.
+        device_id: The device_id of the current GPU when training on multiple GPUs.
         debug_loader: Debug DataLoader which replaces the default training and
             evaluation loaders if not 'None'. Do not use unless you're writing unit
             tests.

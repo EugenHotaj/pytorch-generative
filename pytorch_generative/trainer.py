@@ -83,18 +83,17 @@ class Trainer:
             msg = "sample_fn cannot be None if sample_epochs is not None"
             assert self.sample_fn, msg
 
+        self.device = "cuda" if n_gpus > 0 else "cpu"
+        self.device_id = 0 if device_id is None and n_gpus == 1 else device_id
+        model = model.to(self.device)
         if n_gpus > 1:
             assert device_id is not None, "'device_id' must be provided if n_gpus > 1."
-            self.device, self.device_id = f"cuda", device_id
-            self.model = model.to(self.device)
             model = parallel.DistributedDataParallel(
-                self.model, device_ids=[self.device_id], output_device=self.device_id
+                model, device_ids=[self.device_id], output_device=self.device_id
             )
-        else:
-            self.device, self._device_id = "cpu", 0
-            self.model = model.to(self.device)
 
         # Trainer state saved during checkpointing.
+        self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self._step = 0

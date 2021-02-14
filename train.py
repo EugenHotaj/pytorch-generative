@@ -1,7 +1,9 @@
 """Main training script for models."""
 
+import os
 import argparse
 
+import torch
 import pytorch_generative as pg
 
 
@@ -20,11 +22,24 @@ MODEL_DICT = {
 }
 
 
-def main(args):
-    device = list(range(args.gpus)) or "cpu"
-    MODEL_DICT[args.model].reproduce(
-        args.n_epochs, args.batch_size, args.logdir, device
+def _worker(local_rank, *args):
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12345"
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(local_rank)
+    torch.distributed.init_process_group(
+        backend="nccl",
+        world_size=args[-1],
+        rank=local_rank,
     )
+    model, model_args = args[0], args[1:]
+    MODEL_DICT[model].reproduce(*args, device_id=local_rank)
+
+
+def main(args):
+    if args.gpus > 1:
+        worker_args = model, args.epochs, args.batch_size, args.logdir, args.gpus
+        torch.multiprocessing.spawn(_worker, worker_args, nprocs=args.gpus)
+    MODEL_DICT[args.model].reproduce(args.epochs, args.batch_size, args.logdir)
 
 
 if __name__ == "__main__":
@@ -52,7 +67,7 @@ if __name__ == "__main__":
         default="/tmp/run",
     )
     parser.add_argument(
-        "--n-gpus", type=int, help="number of GPUs to use for training", default=0
+        "--gpus", type=int, help="number of GPUs to run the model on", default=0
     )
     args = parser.parse_args()
 

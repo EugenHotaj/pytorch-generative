@@ -9,6 +9,7 @@ import time
 
 import torch
 from torch import nn
+from torch.nn import parallel
 from torch.nn import utils
 from torch.utils import tensorboard
 
@@ -35,7 +36,8 @@ class Trainer:
         sample_fn=None,
         log_dir=None,
         save_checkpoint_epochs=1,
-        device="cpu",
+        n_gpus=0,
+        device_id=None,
     ):
         """Initializes a new Trainer instance.
 
@@ -62,8 +64,10 @@ class Trainer:
                 cleaned up automatically).
             save_checkpoint_epochs: Number of epochs to wait between checkpoints. Note
                 that this does not affect TensorBoard logging frequency.
-            device: Either a string indicating the device or a list of cuda device ids
-                to use for data parallel training.
+            n_gpus: The number of GPUs to use for training and evaluation. If 0, the
+                CPUs are used instead.
+            device_id: When running on multiple GPUs, the id of the GPU device this
+                Trainer instance is running on.
         """
         self.loss_fn = loss_fn
         self.train_loader = train_loader
@@ -79,18 +83,17 @@ class Trainer:
             msg = "sample_fn cannot be None if sample_epochs is not None"
             assert self.sample_fn, msg
 
-        # TOOD(eugenhotaj): Remove "device" and instead expose a "device_ids" argument
-        # to Trainer where device_ids=None trains on CPU.
-        if isinstance(device, str):
-            self.device = device
-        else:
-            assert len(device) > 0, "'device' list cannot be empty."
-            self.device = f"cuda:{device[0]}"
-            if len(device) > 1:
-                model = nn.DataParallel(model, device_ids=device)
+        self.device = "cuda" if n_gpus > 0 else "cpu"
+        self.device_id = 0 if device_id is None and n_gpus == 1 else device_id
+        model = model.to(self.device)
+        if n_gpus > 1:
+            assert device_id is not None, "'device_id' must be provided if n_gpus > 1."
+            model = parallel.DistributedDataParallel(
+                model, device_ids=[self.device_id], output_device=self.device_id
+            )
 
         # Trainer state saved during checkpointing.
-        self.model = model.to(self.device)
+        self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self._step = 0
@@ -104,7 +107,7 @@ class Trainer:
         return os.path.join(self.log_dir, file_name)
 
     def _save_checkpoint(self):
-        if self._epoch % self.save_checkpoint_epochs != 0:
+        if self.device_id != 0 or self._epoch % self.save_checkpoint_epochs != 0:
             return
         checkpoint = {
             "model": self.model.state_dict(),

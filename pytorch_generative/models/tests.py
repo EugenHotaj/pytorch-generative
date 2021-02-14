@@ -34,7 +34,7 @@ class IntegrationTests(unittest.TestCase):
         dummy_loader = DummyLoader(in_channels, in_size)
         with tempfile.TemporaryDirectory() as log_dir:
             module.reproduce(
-                n_epochs=1, log_dir=log_dir, device="cpu", debug_loader=dummy_loader
+                n_epochs=1, log_dir=log_dir, n_gpus=0, debug_loader=dummy_loader
             )
 
     # TODO(eugenhotaj): Use parameterized tests.

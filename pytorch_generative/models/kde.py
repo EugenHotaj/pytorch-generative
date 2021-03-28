@@ -46,6 +46,9 @@ class ParzenWindowKernel(_Kernel):
         coef = 1 / self.h ** dim
         return (coef * n_inside).mean(dim=1)
 
+    def sample(self, train_Xs):
+        return train_Xs + (torch.rand(train_Xs) - 0.5) * self.h
+
 
 class GaussianKernel(_Kernel):
     """Implementation of the Gaussian kernel."""
@@ -56,7 +59,11 @@ class GaussianKernel(_Kernel):
         coef = 1 / torch.sqrt(torch.tensor(2 * np.pi * self.h))
         return (coef * exp).mean(dim=1)
 
+    def sample(self, train_Xs):
+        return train_Xs + torch.randn(tran_Xs.shape) * self.h
 
+
+# TODO(eugenhotaj): Subclass base.GenerativeModel once we support NCHW tensors.
 class KernelDensityEstimator(nn.Module):
     """The KernelDensityEstimator model."""
 
@@ -73,3 +80,7 @@ class KernelDensityEstimator(nn.Module):
 
     def forward(self, x):
         return self.kernel(x, self.train_Xs)
+
+    def sample(self, n_samples):
+        idxs = np.random.choice(range(len(self.train_Xs)), size=n_samples)
+        return self.kernel.sample(self.train_Xs[idxs])

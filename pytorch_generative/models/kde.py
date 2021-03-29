@@ -37,9 +37,11 @@ class _Kernel(abc.ABC, nn.Module):
         train_Xs = train_Xs.view(1, train_Xs.shape[0], *train_Xs.shape[1:])
         return test_Xs - train_Xs
 
+    @abc.abstractmethod
     def forward(self, test_Xs, train_Xs):
         """Computes p(x) for each x in test_Xs given train_Xs."""
 
+    @abc.abstractmethod
     def sample(self, train_Xs):
         """Generates samples from the kernel distribution."""
 
@@ -56,7 +58,9 @@ class ParzenWindowKernel(_Kernel):
         return (coef * inside).mean(dim=1)
 
     def sample(self, train_Xs):
-        return train_Xs + (torch.rand(train_Xs.shape) - 0.5) * self.bandwidth
+        device = train_Xs.device
+        noise = (torch.rand(train_Xs.shape, device=device) - 0.5) * self.bandwidth
+        return train_Xs + noise
 
 
 class GaussianKernel(_Kernel):
@@ -70,7 +74,9 @@ class GaussianKernel(_Kernel):
         return (coef * exp).mean(dim=1)
 
     def sample(self, train_Xs):
-        return train_Xs + torch.randn(train_Xs.shape) * self.bandwidth
+        device = train_Xs.device
+        noise = torch.randn(train_Xs.shape) * self.bandwidth
+        return train_Xs + noise
 
 
 class KernelDensityEstimator(base.GenerativeModel):
@@ -86,6 +92,10 @@ class KernelDensityEstimator(base.GenerativeModel):
         super().__init__()
         self.kernel = kernel or GaussianKernel()
         self.train_Xs = train_Xs
+
+    @property
+    def device(self):
+        return self.train_Xs.device
 
     def forward(self, x):
         return self.kernel(x, self.train_Xs)

@@ -43,12 +43,12 @@ def get_mnist_loaders(batch_size, dynamically_binarize=False, resize_to_32=False
         datasets.MNIST("/tmp/data", train=True, download=True, transform=transform),
         batch_size=batch_size,
         shuffle=True,
-        num_workers=8,
+        num_workers=os.cpu_count(),
     )
     test_loader = data.DataLoader(
         datasets.MNIST("/tmp/data", train=False, download=True, transform=transform),
         batch_size=batch_size,
-        num_workers=8,
+        num_workers=os.cpu_count(),
     )
     return train_loader, test_loader
 
@@ -72,12 +72,12 @@ def get_cifar10_loaders(batch_size, normalize=False):
         datasets.CIFAR10("/tmp/data", train=True, download=True, transform=transform),
         batch_size=batch_size,
         shuffle=True,
-        num_workers=8,
+        num_workers=os.cpu_count(),
     )
     test_loader = data.DataLoader(
         datasets.CIFAR10("/tmp/data", train=False, download=True, transform=transform),
         batch_size=batch_size,
-        num_workers=8,
+        num_workers=os.cpu_count(),
     )
     return train_loader, test_loader
 

@@ -7,6 +7,8 @@ import torch
 from torch import distributions
 
 from pytorch_generative import models
+from pytorch_generative.models import kde
+from pytorch_generative.models.vd_vae import StackConfig
 
 
 class DummyLoader:
@@ -37,7 +39,6 @@ class IntegrationTests(unittest.TestCase):
                 n_epochs=1, log_dir=log_dir, n_gpus=0, debug_loader=dummy_loader
             )
 
-    # TODO(eugenhotaj): Use parameterized tests.
     def test_NADE(self):
         self._test_integration(models.nade)
 
@@ -140,7 +141,6 @@ class MultipleChannelsTests(unittest.TestCase):
         self._test_multiple_channels(model)
 
     def test_VeryDeepVAE(self):
-        from pytorch_generative.models.vd_vae import StackConfig
 
         model = models.VeryDeepVAE(
             in_channels=3,
@@ -152,5 +152,20 @@ class MultipleChannelsTests(unittest.TestCase):
             ],
             latent_channels=1,
             bottleneck_channels=1,
+        )
+        self._test_multiple_channels(model)
+
+    def test_KernelDensityEstimator(self):
+        train_Xs = batch = torch.rand(4, 3, 8, 8)
+
+        # Test ParzenWindowKernel.
+        model = models.kde.KernelDensityEstimator(
+            kernel=models.kde.ParzenWindowKernel(bandwidth=0.1), train_Xs=train_Xs
+        )
+        self._test_multiple_channels(model)
+
+        # Test GaussianKernel.
+        model = models.kde.KernelDensityEstimator(
+            kernel=models.kde.GaussianKernel(bandwidth=0.1), train_Xs=train_Xs
         )
         self._test_multiple_channels(model)

@@ -69,8 +69,9 @@ class GaussianKernel(_Kernel):
     def forward(self, test_Xs, train_Xs):
         diffs = self._diffs(test_Xs, train_Xs)
         dims = tuple(range(len(diffs.shape))[2:])
-        exp = torch.exp(-torch.norm(diffs, p=2, dim=dims) ** 2 / (2 * self.bandwidth))
-        coef = 1 / torch.sqrt(torch.tensor(2 * np.pi * self.bandwidth))
+        var = self.bandwidth ** 2
+        exp = torch.exp(-torch.norm(diffs, p=2, dim=dims) ** 2 / (2 * var))
+        coef = 1 / torch.sqrt(torch.tensor(2 * np.pi * var))
         return (coef * exp).mean(dim=1)
 
     def sample(self, train_Xs):
@@ -97,6 +98,8 @@ class KernelDensityEstimator(base.GenerativeModel):
     def device(self):
         return self.train_Xs.device
 
+    # TODO(eugenhotaj): This method consumes O(train_Xs * x) memory. Implement an
+    # iterative version instead.
     def forward(self, x):
         return self.kernel(x, self.train_Xs)
 

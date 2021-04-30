@@ -1,8 +1,35 @@
 """Common modules used by Variational Autoencoders."""
 
+import torch
 from torch import nn
 
 from pytorch_generative import nn as pg_nn
+
+
+@torch.jit.script
+def to_var(log_std):
+    """Returns the variance give log standard deviation."""
+    return log_std.exp().pow(2)
+
+
+@torch.jit.script
+def unit_gaussian_kl_div(mean, log_std):
+    """Returns KL(p || N(0, 1)) where p is a Gaussian with diagonal covariance. """
+    return -0.5 * (1 + 2 * log_std - to_var(log_std) - mean ** 2)
+
+
+@torch.jit.script
+def gaussian_kl_div(p_mean, p_log_std, q_mean, q_log_std):
+    """Returns KL(p || q) where p and q are Gaussians with diagonal covariance."""
+    mean_delta, log_std_delta = (p_mean - q_mean) ** 2, q_log_std - p_log_std
+    p_var, q_var = to_var(p_log_std), 2 * to_var(q_log_std)
+    return -0.5 + log_std_delta + (p_var + mean_delta) / q_var
+
+
+@torch.jit.script
+def sample_from_gaussian(mu, log_sig):
+    """Returns a sample from a Gaussian with diagonal covariance."""
+    return mu + log_sig.exp() * torch.randn_like(log_sig)
 
 
 class ResidualBlock(nn.Module):

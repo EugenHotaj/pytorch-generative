@@ -13,6 +13,7 @@ import torch
 from torch import nn
 
 from pytorch_generative.models import base
+from pytorch_generative.models import vaes
 
 
 @dataclass
@@ -150,16 +151,6 @@ class TopDownBlock(nn.Module):
             is_residual=True,
         )
 
-    def _kl_div(self, q_mean, q_log_std, p_mean, p_log_std):
-        """Computes the KL divergence between two univariate Gaussian distributions."""
-        q_var, p_var = q_log_std.exp() ** 2, p_log_std.exp() ** 2
-        mean_delta, std_delta = (q_mean - p_mean) ** 2, p_log_std - q_log_std
-        return -0.5 + std_delta + 0.5 * (q_var + mean_delta) / p_var
-
-    def _z(self, mean, log_std):
-        """Samples latent code 'z' from a univariate Gaussian distribution."""
-        return mean + log_std.exp() * torch.randn_like(log_std)
-
     def forward(self, x, mixin=None):
         """Computes the forward pass.
 
@@ -183,7 +174,7 @@ class TopDownBlock(nn.Module):
         # the prior. Otherwise, we are in the the training regime, so we sample 'z' from
         # the (approximate) posterior.
         if mixin is None:
-            z = self._z(p_mean, p_log_std)
+            z = vaes.sample_from_gaussian(p_mean, p_log_std)
             kl_div = None
         else:
             q_mean, q_log_std = torch.split(
@@ -191,8 +182,8 @@ class TopDownBlock(nn.Module):
                 self._latent_channels,
                 dim=1,
             )
-            z = self._z(q_mean, q_log_std)
-            kl_div = self._kl_div(q_mean, q_log_std, p_mean, p_log_std)
+            z = vaes.sample_from_gaussian(q_mean, q_log_std)
+            kl_div = vaes.gaussian_kl_div(q_mean, q_log_std, p_mean, p_log_std)
 
         latents = self._latents(z)
         return self._out(x + p_h + latents), kl_div

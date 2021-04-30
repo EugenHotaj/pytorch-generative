@@ -86,14 +86,11 @@ class VAE(base.GenerativeModel):
             prior and the posterior. Note that the KL Divergence is NOT normalized by
             the dimension of the input.
         """
-        # NOTE: We use log_var (instead of var or std) for stability and easier
-        # optimization during training.
-        mean, log_var = torch.split(self._encoder(x), self._latent_channels, dim=1)
-        var = torch.exp(log_var)
-        latents = mean + torch.sqrt(var) * torch.randn_like(var)
-        # NOTE: This KL divergence is only applicable under the assumption that the
-        # prior ~ N(0, 1) and the posterior are Gaussian.
-        kl_div = -0.5 * (1 + log_var - mean ** 2 - var).sum(dim=(1, 2, 3))
+        # NOTE: We output log_std both for numerical stability and to ensure that
+        # the variance is positive since log_std.exp().pow(2) >= 0.
+        mean, log_std = torch.split(self._encoder(x), self._latent_channels, dim=1)
+        kl_div = vaes.unit_gaussian_kl_div(mean, log_std).sum(dim=(1, 2, 3))
+        latents = vaes.sample_from_gaussian(mean, log_std)
         return self._decoder(latents), kl_div
 
     def sample(self, n_samples):

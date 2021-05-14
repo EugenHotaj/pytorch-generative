@@ -6,7 +6,7 @@ from torch import nn
 from pytorch_generative.models import base
 
 
-# TODO(eugenhotaj): This can be sped up with masking (which is ~equivalent to NADE).
+# TODO(eugenhotaj): This can be sped up with masking (which is equivalent to MADE).
 class FullyVisibleBeliefNetwork(base.AutoregressiveModel):
     """The Fully Visible Belief Network."""
 
@@ -15,7 +15,7 @@ class FullyVisibleBeliefNetwork(base.AutoregressiveModel):
         self.n_features = n_features
 
         # NOTE: We use in_features=1 and always pass an input of 0 for the first Linear
-        #   model because PyTorch does not allow in_features=0.
+        # model because PyTorch does not allow in_features=0.
         self._net = ModuleList(
             nn.Linear(in_feautres=max(1, i), out_features=1)
             for i in range(self.n_features)

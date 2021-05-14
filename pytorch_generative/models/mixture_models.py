@@ -2,6 +2,7 @@
 
 import abc
 
+import numpy as np
 import torch
 from torch import nn
 from torch import distributions
@@ -38,9 +39,11 @@ class MixtureModel(base.GenerativeModel):
         """Returns the log likelihood of the component distributions."""
 
     def __call__(self, *args, **kwargs):
+        x = args[0]
         self._original_shape = x.shape
         x = x.view(self._original_shape[0], 1, self.n_features)
-        return super().__call__(x)
+        args = (x, *args[1:])
+        return super().__call__(*args, **kwargs)
 
     def forward(self, x):
         mixture_log_prob = torch.log_softmax(self.mixture_logits, dim=-1)

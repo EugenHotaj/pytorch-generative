@@ -7,7 +7,6 @@ import torch
 from torch import distributions
 
 from pytorch_generative import models
-from pytorch_generative.models import kde
 from pytorch_generative.models.vd_vae import StackConfig
 
 
@@ -159,13 +158,23 @@ class MultipleChannelsTests(unittest.TestCase):
         train_Xs = batch = torch.rand(4, 3, 8, 8)
 
         # Test ParzenWindowKernel.
-        model = models.kde.KernelDensityEstimator(
-            kernel=models.kde.ParzenWindowKernel(bandwidth=0.1), train_Xs=train_Xs
+        model = models.KernelDensityEstimator(
+            kernel=models.ParzenWindowKernel(bandwidth=0.1), train_Xs=train_Xs
         )
         self._test_multiple_channels(model)
 
         # Test GaussianKernel.
-        model = models.kde.KernelDensityEstimator(
-            kernel=models.kde.GaussianKernel(bandwidth=0.1), train_Xs=train_Xs
+        model = models.KernelDensityEstimator(
+            kernel=models.GaussianKernel(bandwidth=0.1), train_Xs=train_Xs
         )
+        self._test_multiple_channels(model)
+
+    def test_MixtureModels(self):
+        n_features = 3 * 8 * 8
+        # Test GaussianMixtureModel.
+        model = models.GaussianMixtureModel(n_components=3, n_features=n_features)
+        self._test_multiple_channels(model)
+
+        # Test BernoulliMixtureModel.
+        model = models.BernoulliMixtureModel(n_components=3, n_features=n_features)
         self._test_multiple_channels(model)

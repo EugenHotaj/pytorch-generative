@@ -1,15 +1,33 @@
+"""Implementations of various mixture models."""
+
 import abc
 
 import torch
 from torch import nn
 from torch import distributions
 import torch.nn.functional as F
+from pytorch_generative.models import base
 
-# TODO(eugenhotaj): Add docs, tests, etc.
 
+class MixtureModel(base.GenerativeModel):
+    """Base class inherited by all mixture models in pytorch-generative.
 
-class MixtureModel(abc.ABC, nn.Module):
+    Provides:
+        * A generic `forward()` method which returns the log likelihood of the input
+          under the distribution.` The log likelihood of the component distributions
+          must be defined by the subclasses via `_component_log_prob()`.
+        * A generic `sample()` method which returns samples from the distribution.
+          Samples from the component distribution must be defined by the subclasses via
+          `_component_sample()`.
+    """
+
     def __init__(self, n_components, n_features):
+        """Initializes a new MixtureModel instance.
+
+        Args:
+            n_components: The number of component distributions.
+            n_features: The number of features (i.e. dimensions) in each component.
+        """
         super().__init__()
         self.n_components = n_components
         self.n_features = n_features
@@ -17,9 +35,9 @@ class MixtureModel(abc.ABC, nn.Module):
 
     @abc.abstractmethod
     def _component_log_prob(self):
-        """Must be overridden by the subclass."""
+        """Returns the log likelihood of the component distributions."""
 
-    def __call__(self, x):
+    def __call__(self, *args, **kwargs):
         self._original_shape = x.shape
         x = x.view(self._original_shape[0], 1, self.n_features)
         return super().__call__(x)
@@ -31,7 +49,7 @@ class MixtureModel(abc.ABC, nn.Module):
 
     @abc.abstractmethod
     def _component_sample(self, idxs):
-        """Must be overrideen by the subclass."""
+        """Returns samples from the component distributions conditioned on idxs."""
 
     def sample(self, n_samples):
         with torch.no_grad():
@@ -42,6 +60,8 @@ class MixtureModel(abc.ABC, nn.Module):
 
 
 class GaussianMixtureModel(MixtureModel):
+    """A categorical mixture of Gaussian distributions."""
+
     def __init__(self, n_components, n_features):
         super().__init__(n_components, n_features)
         self.mean = nn.Parameter(torch.randn(n_components, n_features) * 0.01)
@@ -61,6 +81,8 @@ class GaussianMixtureModel(MixtureModel):
 
 
 class BernoulliMixtureModel(MixtureModel):
+    """A categorical mixture of Bernoulli distributions."""
+
     def __init__(self, n_components, n_features):
         super().__init__(n_components, n_features)
         self.logits = nn.Parameter(torch.rand(n_components, n_features))

@@ -18,13 +18,14 @@ class GenerativeModel(abc.ABC, nn.Module):
         * An abstract `sample()` method which is implemented by subclasses that support
           generating samples.
         * Variables `self._c, self._h, self._w` which store the shape of the (first)
-          input Tensor the model was trained with. Note that `forward()` must have been
-          called at least once for these variables to be available.
+          image Tensor the model was trained with. Note that `forward()` must have been
+          called at least once and the input must be an image for these variables to be
+          available.
         * A `device` property which returns the device of the model's parameters.
     """
 
     def __call__(self, *args, **kwargs):
-        if getattr(self, "c", None) is None:
+        if getattr(self, "_c", None) is None and len(args[0].shape) == 4:
             _, self._c, self._h, self._w = args[0].shape
         return super().__call__(*args, **kwargs)
 

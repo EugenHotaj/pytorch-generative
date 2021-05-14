@@ -13,7 +13,7 @@ import torch
 from torch import nn
 
 from pytorch_generative.models import base
-from pytorch_generative.models import vaes
+from pytorch_generative.models.vae import vaes
 
 
 @dataclass

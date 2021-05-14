@@ -10,7 +10,7 @@ References (used throughout the code):
     [1]: https://openreview.net/pdf?id=Sy2fzU9gl 
 """
 
-from pytorch_generative.models import vae
+from pytorch_generative.models.vae import vae
 
 
 class BetaVAE(vae.VAE):

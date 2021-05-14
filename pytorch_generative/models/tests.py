@@ -7,7 +7,8 @@ import torch
 from torch import distributions
 
 from pytorch_generative import models
-from pytorch_generative.models.vd_vae import StackConfig
+from pytorch_generative.models import autoregressive
+from pytorch_generative.models import vae
 
 
 class DummyLoader:
@@ -39,37 +40,37 @@ class IntegrationTests(unittest.TestCase):
             )
 
     def test_NADE(self):
-        self._test_integration(models.nade)
+        self._test_integration(autoregressive.nade)
 
     def test_MADE(self):
-        self._test_integration(models.made)
+        self._test_integration(autoregressive.made)
 
     def test_PixelCNN(self):
-        self._test_integration(models.pixel_cnn)
+        self._test_integration(autoregressive.pixel_cnn)
 
     def test_GatedPixelCNN(self):
-        self._test_integration(models.gated_pixel_cnn)
+        self._test_integration(autoregressive.gated_pixel_cnn)
 
     def test_PixelSnail(self):
-        self._test_integration(models.pixel_snail)
+        self._test_integration(autoregressive.pixel_snail)
 
     def test_ImageGPT(self):
-        self._test_integration(models.image_gpt)
+        self._test_integration(autoregressive.image_gpt)
 
     def test_VAE(self):
-        self._test_integration(models.vae, in_size=32)
+        self._test_integration(vae.vae, in_size=32)
 
     def test_BetaVAE(self):
-        self._test_integration(models.beta_vae, in_size=32)
+        self._test_integration(vae.beta_vae, in_size=32)
 
     def test_VeryDeepVAE(self):
-        self._test_integration(models.vd_vae, in_size=32)
+        self._test_integration(vae.vd_vae, in_size=32)
 
     def test_VectorQuantizedVAE(self):
-        self._test_integration(models.vq_vae, in_channels=3)
+        self._test_integration(vae.vq_vae, in_channels=3)
 
     def test_VectorQuantizedVAE2(self):
-        self._test_integration(models.vq_vae_2, in_channels=3)
+        self._test_integration(vae.vq_vae_2, in_channels=3)
 
 
 class MultipleChannelsTests(unittest.TestCase):
@@ -140,6 +141,7 @@ class MultipleChannelsTests(unittest.TestCase):
         self._test_multiple_channels(model)
 
     def test_VeryDeepVAE(self):
+        from pytorch_generative.models.vae.vd_vae import StackConfig
 
         model = models.VeryDeepVAE(
             in_channels=3,

@@ -6,68 +6,19 @@ from torch import nn
 
 from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
-from pytorch_generative.models.beta_vae import BetaVAE
-from pytorch_generative.models.gated_pixel_cnn import GatedPixelCNN
-from pytorch_generative.models.image_gpt import ImageGPT
+from pytorch_generative.models.autoregressive.gated_pixel_cnn import GatedPixelCNN
+from pytorch_generative.models.autoregressive.image_gpt import ImageGPT
+from pytorch_generative.models.autoregressive.made import MADE
+from pytorch_generative.models.autoregressive.nade import NADE
+from pytorch_generative.models.autoregressive.pixel_cnn import PixelCNN
+from pytorch_generative.models.autoregressive.pixel_snail import PixelSNAIL
 from pytorch_generative.models.kde import GaussianKernel
 from pytorch_generative.models.kde import KernelDensityEstimator
 from pytorch_generative.models.kde import ParzenWindowKernel
-from pytorch_generative.models.made import MADE
 from pytorch_generative.models.mixture_models import BernoulliMixtureModel
 from pytorch_generative.models.mixture_models import GaussianMixtureModel
-from pytorch_generative.models.nade import NADE
-from pytorch_generative.models.pixel_cnn import PixelCNN
-from pytorch_generative.models.pixel_snail import PixelSNAIL
-from pytorch_generative.models.vae import VAE
-from pytorch_generative.models.vd_vae import VeryDeepVAE
-from pytorch_generative.models.vq_vae import VectorQuantizedVAE
-from pytorch_generative.models.vq_vae_2 import VectorQuantizedVAE2
-
-
-class TinyCNN(base.AutoregressiveModel):
-    """A small network used for sanity checks."""
-
-    def __init__(self, in_channels=1, out_channels=1, sample_fn=None):
-        """Initializes a new TinyCNN instance.
-
-        Args:
-            in_channels: Number of input channels.
-            out_channels: Number of output channels.
-            sample_fn: See the base class.
-        """
-        super().__init__(sample_fn)
-        self._conv = pg_nn.CausalConv2d(
-            mask_center=True,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=3,
-            padding=1,
-        )
-
-    def forward(self, x):
-        return self._conv(x)
-
-
-__all__ = [
-    # Autoregressive models.
-    "TinyCNN",
-    "GatedPixelCNN",
-    "ImageGPT",
-    "MADE",
-    "NADE",
-    "PixelCNN",
-    "PixelSNAIL",
-    # Variational autoencoders.
-    "BetaVAE",
-    "VAE",
-    "VeryDeepVAE",
-    "VectorQuantizedVAE",
-    "VectorQuantizedVAE2",
-    # Kernel density estimators.
-    "GaussianKernel",
-    "KernelDensityEstimator",
-    "ParzenWindowKernel",
-    # Mixture models.
-    "BernoulliMixtureModel",
-    "GaussianMixtureModel",
-]
+from pytorch_generative.models.vae.beta_vae import BetaVAE
+from pytorch_generative.models.vae.vae import VAE
+from pytorch_generative.models.vae.vd_vae import VeryDeepVAE
+from pytorch_generative.models.vae.vq_vae import VectorQuantizedVAE
+from pytorch_generative.models.vae.vq_vae_2 import VectorQuantizedVAE2

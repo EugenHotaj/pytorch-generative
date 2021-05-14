@@ -15,7 +15,7 @@ References (used throughout the code):
 from torch import nn
 
 from pytorch_generative.models import base
-from pytorch_generative.models import vaes
+from pytorch_generative.models.vae import vaes
 
 
 class VectorQuantizedVAE(base.GenerativeModel):

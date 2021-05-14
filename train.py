@@ -8,17 +8,17 @@ import pytorch_generative as pg
 
 
 MODEL_DICT = {
-    "gated_pixel_cnn": pg.models.gated_pixel_cnn,
-    "image_gpt": pg.models.image_gpt,
-    "made": pg.models.made,
-    "nade": pg.models.nade,
-    "pixel_cnn": pg.models.pixel_cnn,
-    "pixel_snail": pg.models.pixel_snail,
-    "vae": pg.models.vae,
-    "beta_vae": pg.models.beta_vae,
-    "vd_vae": pg.models.vd_vae,
-    "vq_vae": pg.models.vq_vae,
-    "vq_vae_2": pg.models.vq_vae_2,
+    "gated_pixel_cnn": pg.models.autoregressive.gated_pixel_cnn,
+    "image_gpt": pg.models.autoregressive.image_gpt,
+    "made": pg.models.autoregressive.made,
+    "nade": pg.models.autoregressive.nade,
+    "pixel_cnn": pg.models.autoregressive.pixel_cnn,
+    "pixel_snail": pg.models.autoregressive.pixel_snail,
+    "vae": pg.models.vae.vae,
+    "beta_vae": pg.models.vae.beta_vae,
+    "vd_vae": pg.models.vae.vd_vae,
+    "vq_vae": pg.models.vae.vq_vae,
+    "vq_vae_2": pg.models.vae.vq_vae_2,
 }
 
 

@@ -15,8 +15,7 @@ To get started, click on one of the links below.
 * [Supported Algorithms](#supported-algorithms) 
   * [Autoregressive Models](#autoregressive-models)
   * [Variational Autoencoders](#variational-autoencoders)
-  * [Neural Style Transfer](#neural-style-transfer)
-  * [Compositional Pattern Producing Networks](compositional-pattern-producing-networks)
+  * [Miscellaneous](#miscellaneous)
 
 ## Installation
 
@@ -180,12 +179,12 @@ We train likelihood based models on dynamically [Binarized MNIST](https://papers
 
 | Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
 | --- | ---| --- |
-| PixelSNAIL | **78.61** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_snail.py), [Paper](http://proceedings.mlr.press/v80/chen18h/chen18h.pdf) |
-| ImageGPT | 79.17 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/image_gpt.py), [Paper](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf)|
-| Gated PixelCNN | 81.50 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/gated_pixel_cnn.py), [Paper](https://arxiv.org/abs/1606.05328) |
-| PixelCNN | 81.45 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/pixel_cnn.py), [Paper](https://arxiv.org/abs/1601.06759) |
-| MADE | 84.87 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/made.py), [Paper](https://arxiv.org/abs/1502.03509) |
-| NADE | 85.65 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/nade.py), [Paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf) |
+| PixelSNAIL | **78.61** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/pixel_snail.py), [Paper](http://proceedings.mlr.press/v80/chen18h/chen18h.pdf) |
+| ImageGPT | 79.17 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/image_gpt.py), [Paper](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf)|
+| Gated PixelCNN | 81.50 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/gated_pixel_cnn.py), [Paper](https://arxiv.org/abs/1606.05328) |
+| PixelCNN | 81.45 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/pixel_cnn.py), [Paper](https://arxiv.org/abs/1601.06759) |
+| MADE | 84.87 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/made.py), [Paper](https://arxiv.org/abs/1502.03509) |
+| NADE | 85.65 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/nade.py), [Paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf) |
 
 ### Variational Autoencoders
 
@@ -194,18 +193,17 @@ NOTE: The results below are the (variational) upper bound on the negative log li
 
 | Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
 | --- | ---| --- |
-| VD-VAE | **<= 80.72** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |
-| VAE | <= 86.77 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae.py), [Paper](https://arxiv.org/abs/1312.6114) |
-| BetaVAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/beta_vae.py), [Paper](https://openreview.net/pdf?id=Sy2fzU9gl) |
-| VQ-VAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae.py), [Paper](https://arxiv.org/abs/1711.00937) |
-| VQ-VAE-2 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vq_vae_2.py), [Paper](https://arxiv.org/abs/1906.00446) |
+| VD-VAE | **<= 80.72** | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vd_vae.py), [Paper](https://arxiv.org/abs/2011.10650) |
+| VAE | <= 86.77 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vae.py), [Paper](https://arxiv.org/abs/1312.6114) |
+| BetaVAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/beta_vae.py), [Paper](https://openreview.net/pdf?id=Sy2fzU9gl) |
+| VQ-VAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vq_vae.py), [Paper](https://arxiv.org/abs/1711.00937) |
+| VQ-VAE-2 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vq_vae_2.py), [Paper](https://arxiv.org/abs/1906.00446) |
 
+### Miscellaneous
 
-### Neural Style Transfer
-Blog: https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489 <br>
-Notebook: https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/style_transfer.ipynb <br>
-Paper: https://arxiv.org/abs/1508.06576
-
-### Compositional Pattern Producing Networks
-Notebook: https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/cppn.ipynb <br>
-Background: https://en.wikipedia.org/wiki/Compositional_pattern-producing_network
+| Algorithm |  Links |
+| --- | --- |
+| Mixture Models | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/mixture_models.py), [Wiki](https://en.wikipedia.org/wiki/Mixture_model) |
+| Kernel Density Estimators | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/kde.py), [Wiki](https://en.wikipedia.org/wiki/Kernel_density_estimation) |
+| Nerual Style Transfer | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/style_transfer.ipynb), [Blog](https://towardsdatascience.com/how-to-get-beautiful-results-with-neural-style-transfer-75d0c05d6489), [Paper](https://arxiv.org/abs/1508.06576) |
+| Compositional Pattern Producing Networks | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/notebooks/cppn.ipynb), [Wiki](https://en.wikipedia.org/wiki/Compositional_pattern-producing_network) |

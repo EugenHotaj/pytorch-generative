@@ -164,7 +164,6 @@ def reproduce(
     """
     from torch import optim
     from torch.nn import functional as F
-    from torch.optim import lr_scheduler
 
     from pytorch_generative import datasets
     from pytorch_generative import models

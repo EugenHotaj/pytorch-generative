@@ -185,6 +185,7 @@ We train likelihood based models on dynamically [Binarized MNIST](https://papers
 | PixelCNN | 81.45 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/pixel_cnn.py), [Paper](https://arxiv.org/abs/1601.06759) |
 | MADE | 84.87 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/made.py), [Paper](https://arxiv.org/abs/1502.03509) |
 | NADE | 85.65 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/nade.py), [Paper](http://proceedings.mlr.press/v15/larochelle11a/larochelle11a.pdf) |
+| FVSBN | 96.58 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/autoregressive/fvbn.py), [Paper](https://www.semanticscholar.org/paper/Connectionist-Learning-of-Belief-Networks-Neal/a120c05ad7cd4ce2eb8fb9697e16c7c4877208a5) |
 
 ### Variational Autoencoders
 

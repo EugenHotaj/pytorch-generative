@@ -6,6 +6,7 @@ from torch import nn
 
 from pytorch_generative import nn as pg_nn
 from pytorch_generative.models import base
+from pytorch_generative.models.autoregressive.fvbn import FullyVisibleBeliefNetwork
 from pytorch_generative.models.autoregressive.gated_pixel_cnn import GatedPixelCNN
 from pytorch_generative.models.autoregressive.image_gpt import ImageGPT
 from pytorch_generative.models.autoregressive.made import MADE

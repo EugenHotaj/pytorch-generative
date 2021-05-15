@@ -57,6 +57,9 @@ class IntegrationTests(unittest.TestCase):
     def test_ImageGPT(self):
         self._test_integration(autoregressive.image_gpt)
 
+    def test_FullyVisibleBeliefNetwork(self):
+        self._test_integration(autoregressive.fvbn)
+
     def test_VAE(self):
         self._test_integration(vae.vae, in_size=32)
 
@@ -171,7 +174,7 @@ class MultipleChannelsTests(unittest.TestCase):
         )
         self._test_multiple_channels(model)
 
-    def test_MixtureModels(self):
+    def test_MixtureModel(self):
         n_features = 3 * 8 * 8
         # Test GaussianMixtureModel.
         model = models.GaussianMixtureModel(n_components=3, n_features=n_features)

@@ -44,7 +44,7 @@ class Trainer:
         Args:
             model: Model to train and evaluate.
             loss_fn: A `fn(inputs, targets, predictions)->output`. The output can either
-                be a single loss Tensor or a dictionary containing multiple loss
+                be a single loss Tensor or a metrics dictionary containing multiple
                 Tensors. The dictionary must contain a `loss` key which will be used as
                 the primary loss for backprop.
             optimizer: Optimizer to use when training.
@@ -155,18 +155,19 @@ class Trainer:
             self.log_dir, max_queue=100, purge_step=self._step
         )
 
-    def _get_loss_dict(self, loss):
-        loss = loss if isinstance(loss, dict) else {"loss": loss}
-        assert "loss" in loss, 'Losses dictionary does not contain "loss" key.'
-        return loss
+    def _get_metrics_dict(self, loss_or_metrics):
+        metrics = loss_or_metrics
+        if not isinstance(metrics, dict):
+            metrics = {"loss": metrics}
+        assert "loss" in metrics, 'Metrics dictionary does not contain "loss" key.'
+        return metrics
 
     # TODO(eugenhotaj): Consider removing the 'training' argument and just using
     # self.model.parameters().training.
-    def _log_loss_dict(self, loss_dict, training):
-        for key, loss in loss_dict.items():
-            key = key if key == "loss" else f"loss/{key}"
+    def _log_metrics(self, metrics, training):
+        for key, metric in metrics.items():
             self._summary_writer.add_scalars(
-                key, {"train" if training else "eval": loss}, self._step
+                f"metrics/{key}", {"train" if training else "eval": metric}, self._step
             )
 
     def train_one_batch(self, x, y):
@@ -175,8 +176,7 @@ class Trainer:
         Subclasses can override this method to define custom training loops.
         """
         preds = self.model(x)
-        loss = self.loss_fn(x, y, preds)
-        return loss
+        return self.loss_fn(x, y, preds)
 
     def _train_one_batch(self, x, y):
         self.model.train()
@@ -184,8 +184,8 @@ class Trainer:
         if y is not None:
             y = y.to(self.device)
         self.optimizer.zero_grad()
-        loss = self._get_loss_dict(self.train_one_batch(x, y))
-        loss["loss"].backward()
+        metrics = self._get_metrics_dict(self.train_one_batch(x, y))
+        metrics["loss"].backward()
 
         norm = 0
         max_norm = self.clip_grad_norm or self.skip_grad_norm or None
@@ -197,7 +197,7 @@ class Trainer:
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
-        return {k: v.item() for k, v in loss.items()}
+        return {k: v.item() for k, v in metrics.items()}
 
     def eval_one_batch(self, x, y):
         """Evaluates the model on a single batch of examples.
@@ -205,8 +205,7 @@ class Trainer:
         Subclasses can override this method to define custom evaluation loops.
         """
         preds = self.model(x)
-        loss = self.loss_fn(x, y, preds)
-        return loss
+        return self.loss_fn(x, y, preds)
 
     def _eval_one_batch(self, x, y):
         with torch.no_grad():
@@ -214,8 +213,8 @@ class Trainer:
             x = x.to(self.device)
             if y is not None:
                 y = y.to(self.device)
-            loss = self._get_loss_dict(self.eval_one_batch(x, y))
-            return {k: v.item() for k, v in loss.items()}
+            metrics = self._get_metrics_dict(self.eval_one_batch(x, y))
+            return {k: v.item() for k, v in metrics.items()}
 
     def interleaved_train_and_eval(self, max_epochs, restore=True):
         """Trains and evaluates (after each epoch).
@@ -243,9 +242,9 @@ class Trainer:
                     f"group_{i}": param["lr"]
                     for i, param in enumerate(self.optimizer.param_groups)
                 }
-                self._summary_writer.add_scalars("loss/lr", lrs, self._step)
-                loss = self._train_one_batch(x, y)
-                self._log_loss_dict(loss, training=True)
+                self._summary_writer.add_scalars("metrics/lr", lrs, self._step)
+                metrics = self._train_one_batch(x, y)
+                self._log_metrics(metrics, training=True)
 
                 self._time_taken += time.time() - start_time
                 start_time = time.time()
@@ -264,16 +263,16 @@ class Trainer:
                 self._step += 1
 
             # Evaluate
-            total_examples, total_loss = 0, collections.defaultdict(int)
+            n_examples, sum_metrics = 0, collections.defaultdict(float)
             for batch in self.eval_loader:
                 batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
                 x, y = batch
-                n_examples = x.shape[0]
-                total_examples += n_examples
-                for key, loss in self._eval_one_batch(x, y).items():
-                    total_loss[key] += loss * n_examples
-            loss = {key: loss / total_examples for key, loss in total_loss.items()}
-            self._log_loss_dict(loss, training=False)
+                n_batch_examples = x.shape[0]
+                n_examples += n_batch_examples
+                for key, metric in self._eval_one_batch(x, y).items():
+                    sum_metrics[key] += metric * n_batch_examples
+            metrics = {key: metric / n_examples for key, metric in sum_metrics.items()}
+            self._log_metrics(metrics, training=False)
 
             self._epoch += 1
             self._save_checkpoint()

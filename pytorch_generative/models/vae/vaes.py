@@ -1,5 +1,6 @@
 """Common modules used by Variational Autoencoders."""
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -33,9 +34,9 @@ def sample_from_gaussian(mu, log_sig):
 
 
 @torch.jit.script
-def _unflatten_tril(x, dim):
+def _unflatten_tril(x):
     """Unflattens a vector into a lower triangular matrix of shape `dim x dim`."""
-    n = x.shape[0]
+    n, dim = x.shape
     idxs = torch.tril_indices(dim, dim)
     tril = torch.zeros(n, dim, dim)
     tril[:, idxs[0, :], idxs[1, :]] = x
@@ -56,10 +57,11 @@ def gaussian_log_prob(x, mu, chol_sig):
     Returns:
         The log likelihood.
     """
+    dim = x.shape[0]
     chol_sig = _unflatten_tril(chol_sig)
     sig = chol_sig @ chol_sig.T
-    const = -0.5 * self.n_dim * torch.log(torch.tensor(2 * np.pi))
-    log_det = -0.5 * torch.log_det(x)
+    const = -0.5 * dim * torch.log(torch.tensor(2 * np.pi))
+    log_det = -0.5 * torch.logdet(x)
     exp = -0.5 * ((x - mu).T @ sig.inverse() @ (x - mu))
     return const + log_det + exp
 

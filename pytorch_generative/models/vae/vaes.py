@@ -8,19 +8,19 @@ from pytorch_generative import nn as pg_nn
 
 @torch.jit.script
 def to_var(log_std):
-    """Returns the variance give log standard deviation."""
+    """Returns the variance given the log standard deviation."""
     return log_std.exp().pow(2)
 
 
 @torch.jit.script
 def unit_gaussian_kl_div(mean, log_std):
-    """Returns KL(p || N(0, 1)) where p is a Gaussian with diagonal covariance. """
+    """Returns `KL(p || N(0, 1))` where `p` is a Gaussian with diagonal covariance."""
     return -0.5 * (1 + 2 * log_std - to_var(log_std) - mean ** 2)
 
 
 @torch.jit.script
 def gaussian_kl_div(p_mean, p_log_std, q_mean, q_log_std):
-    """Returns KL(p || q) where p and q are Gaussians with diagonal covariance."""
+    """Returns `KL(p || q)` where `p` and `q` are Gaussians with diagonal covariance."""
     mean_delta, log_std_delta = (p_mean - q_mean) ** 2, q_log_std - p_log_std
     p_var, q_var = to_var(p_log_std), 2 * to_var(q_log_std)
     return -0.5 + log_std_delta + (p_var + mean_delta) / q_var
@@ -30,6 +30,38 @@ def gaussian_kl_div(p_mean, p_log_std, q_mean, q_log_std):
 def sample_from_gaussian(mu, log_sig):
     """Returns a sample from a Gaussian with diagonal covariance."""
     return mu + log_sig.exp() * torch.randn_like(log_sig)
+
+
+@torch.jit.script
+def _unflatten_tril(x, dim):
+    """Unflattens a vector into a lower triangular matrix of shape `dim x dim`."""
+    n = x.shape[0]
+    idxs = torch.tril_indices(dim, dim)
+    tril = torch.zeros(n, dim, dim)
+    tril[:, idxs[0, :], idxs[1, :]] = x
+    return tril
+
+
+@torch.jit.script
+def gaussian_log_prob(x, mu, chol_sig):
+    """Returns the log likelihood of `x` under a Gaussian with full covariance.
+
+    The covariance is assumed to be positive-definite and to have been decomposed into
+    the Cholesky factor `chol_sig`, i.e. `sig = chol_sig @ chol_sig.T`.
+
+    Args:
+        x: The input for which to compute the log likelihood.
+        mu: The mean of the multivariate Gaussian.
+        chol_sig: The flattened lower-triangular Cholesky factor of the covariance.
+    Returns:
+        The log likelihood.
+    """
+    chol_sig = _unflatten_tril(chol_sig)
+    sig = chol_sig @ chol_sig.T
+    const = -0.5 * self.n_dim * torch.log(torch.tensor(2 * np.pi))
+    log_det = -0.5 * torch.log_det(x)
+    exp = -0.5 * ((x - mu).T @ sig.inverse() @ (x - mu))
+    return const + log_det + exp
 
 
 class ResidualBlock(nn.Module):

@@ -19,11 +19,11 @@ from torch import nn
 from pytorch_generative.models import base
 
 
-class _Kernel(abc.ABC, nn.Module):
+class Kernel(abc.ABC, nn.Module):
     """Base class which defines the interface for all kernels."""
 
     def __init__(self, bandwidth=0.05):
-        """Initializes a new _Kernel.
+        """Initializes a new Kernel.
 
         Args:
             bandwidth: The kernel's (band)width.
@@ -46,7 +46,7 @@ class _Kernel(abc.ABC, nn.Module):
         """Generates samples from the kernel distribution."""
 
 
-class ParzenWindowKernel(_Kernel):
+class ParzenWindowKernel(Kernel):
     """Implementation of the Parzen window kernel."""
 
     def forward(self, test_Xs, train_Xs):
@@ -63,7 +63,7 @@ class ParzenWindowKernel(_Kernel):
         return train_Xs + noise
 
 
-class GaussianKernel(_Kernel):
+class GaussianKernel(Kernel):
     """Implementation of the Gaussian kernel."""
 
     def forward(self, test_Xs, train_Xs):

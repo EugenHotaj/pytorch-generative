@@ -63,7 +63,7 @@ class MixtureModel(base.GenerativeModel):
 
 
 class GaussianMixtureModel(MixtureModel):
-    """A categorical mixture of Gaussian distributions."""
+    """A categorical mixture of Gaussian distributions with diagonal covariance."""
 
     def __init__(self, n_components, n_features):
         super().__init__(n_components, n_features)

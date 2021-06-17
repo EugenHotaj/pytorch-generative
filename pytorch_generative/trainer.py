@@ -190,9 +190,11 @@ class Trainer:
         norm = 0
         max_norm = self.clip_grad_norm or self.skip_grad_norm or None
         if max_norm:
-            norm = utils.clip_grad_norm(self.model.parameters(), max_norm).item()
+            norm = utils.clip_grad_norm_(self.model.parameters(), max_norm)
+            # TODO(eugenhotaj): Log grad_norm in a separate section from metrics.
+            metrics["grad_norm"] = norm
 
-        if not self.skip_grad_norm or norm <= self.skip_grad_norm:
+        if not self.skip_grad_norm or norm.item() <= self.skip_grad_norm:
             self.optimizer.step()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()

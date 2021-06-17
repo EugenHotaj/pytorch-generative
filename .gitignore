@@ -1,12 +1,13 @@
 # MacOS Related
 .DS_Store
 
-# Vim related
+# Vim related.
 *.un~
 *.swp
 
-# Data folder should be ignored.
+# pytorch-generative specific
 data/
+todo
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

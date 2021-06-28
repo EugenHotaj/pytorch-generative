@@ -29,15 +29,22 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def try_del_vars(*names):
-    """Deletes the global variables with the given names if they exist."""
+def empty_gpu_cache(*names):
+    """Tries to empty the GPU cache without needing to restart the Colab session.
+
+    Args:
+        *names: A list of variable names to delete from global scope.
+    """
     names = names or ["model", "optimizer", "model_trainer"]
     for name in names:
         if name in globals():
             del globals()[name]
         if name in locals():
             del locals()[name]
-    gc.collect()
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    torch.cuda.empty_cache()
 
 
 def upload_files():

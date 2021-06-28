@@ -187,8 +187,8 @@ class Trainer:
         metrics = self._get_metrics_dict(self.train_one_batch(x, y))
         metrics["loss"].backward()
 
-        norm = 0
-        max_norm = self.clip_grad_norm or self.skip_grad_norm or None
+        # NOTE: We use 1e50 to ensure norm is logged when not modifying gradients.
+        max_norm = self.clip_grad_norm or self.skip_grad_norm or 1e50
         if max_norm:
             norm = utils.clip_grad_norm_(self.model.parameters(), max_norm)
             # TODO(eugenhotaj): Log grad_norm in a separate section from metrics.

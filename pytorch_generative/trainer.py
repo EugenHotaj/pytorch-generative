@@ -189,10 +189,9 @@ class Trainer:
 
         # NOTE: We use 1e50 to ensure norm is logged when not modifying gradients.
         max_norm = self.clip_grad_norm or self.skip_grad_norm or 1e50
-        if max_norm:
-            norm = utils.clip_grad_norm_(self.model.parameters(), max_norm)
-            # TODO(eugenhotaj): Log grad_norm in a separate section from metrics.
-            metrics["grad_norm"] = norm
+        norm = utils.clip_grad_norm_(self.model.parameters(), max_norm)
+        # TODO(eugenhotaj): Log grad_norm in a separate section from metrics.
+        metrics["grad_norm"] = norm
 
         if not self.skip_grad_norm or norm.item() <= self.skip_grad_norm:
             self.optimizer.step()

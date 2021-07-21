@@ -128,7 +128,7 @@ class Trainer:
         if not epochs:
             raise FileNotFoundError(f"No checkpoints found in {self.log_dir}.")
         latest_epoch = epochs[-1]
-        print(f"Restoring checkpoint from epoch {latest_epoch}.")
+        print(f"Found {len(epochs)} saved checkpoints.")
         return epochs[-1]
 
     def restore_checkpoint(self, epoch=None):
@@ -139,7 +139,9 @@ class Trainer:
                 latest available epoch.
         """
         epoch = epoch or self._find_latest_epoch()
-        checkpoint = torch.load(self._path(f"trainer_state_{epoch}.ckpt"))
+        checkpoint = f"trainer_state_{epoch}.ckpt"
+        print(f"Restoring trainer state from {checkpoint}.")
+        checkpoint = torch.load(self._path(checkpoint))
 
         self.model.load_state_dict(checkpoint["model"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])

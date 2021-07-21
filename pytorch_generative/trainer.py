@@ -127,6 +127,8 @@ class Trainer:
         epochs = sorted([int(re.findall(r"\d+", f)[0]) for f in files])
         if not epochs:
             raise FileNotFoundError(f"No checkpoints found in {self.log_dir}.")
+        latest_epoch = epochs[-1]
+        print(f"Restoring checkpoint from epoch {latest_epoch}.")
         return epochs[-1]
 
     def restore_checkpoint(self, epoch=None):

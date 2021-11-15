@@ -149,12 +149,12 @@ def reproduce(
             batch_size, normalize=True
         )
 
-    model = models.VectorQuantizedVAE(
+    model = models.VectorQuantizedVAE2(
         in_channels=3,
         out_channels=3,
         hidden_channels=128,
-        residual_channels=64,
         n_residual_blocks=2,
+        residual_channels=64,
         n_embeddings=512,
         embedding_dim=64,
     )

@@ -91,7 +91,7 @@ class PixelSNAILBlock(nn.Module):
             *[ResidualBlock(n_channels) for _ in range(n_residual_blocks)]
         )
         self._attention = pg_nn.CausalAttention(
-            in_channels=n_channels + 2 * input_img_channels,
+            in_channels=n_channels + 2,
             embed_channels=attention_key_channels,
             out_channels=attention_value_channels,
             mask_center=True,

@@ -16,9 +16,9 @@ from torch.nn import functional as F
 
 @functools.lru_cache(maxsize=32)
 def image_positional_encoding(shape):
-    """Generates *per-channel* positional encodings for 2d images.
+    """Generates positional encodings for 2d images.
 
-    The positional encoding is a Tensor of shape (N, 2*C, H, W) of (x, y) pixel
+    The positional encoding is a Tensor of shape (N, 2, H, W) of (x, y) pixel
     coordinates scaled to be between -.5 and .5.
 
     Args:
@@ -27,7 +27,7 @@ def image_positional_encoding(shape):
         The positional encodings.
     """
     n, c, h, w = shape
-    zeros = torch.zeros(n, c, h, w)
+    zeros = torch.zeros(n, 1, h, w)
     return torch.cat(
         (
             (torch.arange(-0.5, 0.5, 1 / h)[None, None, :, None] + zeros),

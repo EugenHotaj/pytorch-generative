@@ -4,6 +4,7 @@
 # Vim related.
 *.un~
 *.swp
+*.swo
 
 # pytorch-generative specific
 data/

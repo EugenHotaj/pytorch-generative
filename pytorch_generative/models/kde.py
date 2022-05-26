@@ -22,7 +22,7 @@ from pytorch_generative.models import base
 class Kernel(abc.ABC, nn.Module):
     """Base class which defines the interface for all kernels."""
 
-    def __init__(self, bandwidth=0.05):
+    def __init__(self, bandwidth=1.0):
         """Initializes a new Kernel.
 
         Args:
@@ -39,7 +39,7 @@ class Kernel(abc.ABC, nn.Module):
 
     @abc.abstractmethod
     def forward(self, test_Xs, train_Xs):
-        """Computes p(x) for each x in test_Xs given train_Xs."""
+        """Computes log p(x) for each x in test_Xs given train_Xs."""
 
     @abc.abstractmethod
     def sample(self, train_Xs):
@@ -55,7 +55,7 @@ class ParzenWindowKernel(Kernel):
         dim = np.prod(abs_diffs.shape[2:])
         inside = torch.sum(abs_diffs / self.bandwidth <= 0.5, dim=dims) == dim
         coef = 1 / self.bandwidth ** dim
-        return (coef * inside).mean(dim=1)
+        return torch.log((coef * inside).mean(dim=1))
 
     def sample(self, train_Xs):
         device = train_Xs.device
@@ -67,12 +67,15 @@ class GaussianKernel(Kernel):
     """Implementation of the Gaussian kernel."""
 
     def forward(self, test_Xs, train_Xs):
-        diffs = self._diffs(test_Xs, train_Xs)
-        dims = tuple(range(len(diffs.shape))[2:])
-        var = self.bandwidth ** 2
-        exp = torch.exp(-torch.norm(diffs, p=2, dim=dims) ** 2 / (2 * var))
-        coef = 1 / torch.sqrt(torch.tensor(2 * np.pi * var))
-        return (coef * exp).mean(dim=1)
+        n, d = train_Xs.shape
+        n, h = torch.tensor(n, dtype=torch.float32), torch.tensor(self.bandwidth)
+        pi = torch.tensor(np.pi)
+
+        Z = 0.5 * d * torch.log(2 * pi) + d * torch.log(h) + torch.log(n)
+        diffs = self._diffs(test_Xs, train_Xs) / h
+        log_exp = -0.5 * torch.norm(diffs, p=2, dim=-1) ** 2
+
+        return torch.logsumexp(log_exp - Z, dim=-1)
 
     def sample(self, train_Xs):
         device = train_Xs.device
@@ -93,6 +96,7 @@ class KernelDensityEstimator(base.GenerativeModel):
         super().__init__()
         self.kernel = kernel or GaussianKernel()
         self.train_Xs = train_Xs
+        assert len(self.train_Xs.shape) == 2, "Input cannot have more than two axes."
 
     @property
     def device(self):

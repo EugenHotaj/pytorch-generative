@@ -159,21 +159,6 @@ class MultipleChannelsTests(unittest.TestCase):
         )
         self._test_multiple_channels(model)
 
-    def test_KernelDensityEstimator(self):
-        train_Xs = batch = torch.rand(4, 3, 8, 8)
-
-        # Test ParzenWindowKernel.
-        model = models.KernelDensityEstimator(
-            kernel=models.ParzenWindowKernel(bandwidth=0.1), train_Xs=train_Xs
-        )
-        self._test_multiple_channels(model)
-
-        # Test GaussianKernel.
-        model = models.KernelDensityEstimator(
-            kernel=models.GaussianKernel(bandwidth=0.1), train_Xs=train_Xs
-        )
-        self._test_multiple_channels(model)
-
     def test_MixtureModel(self):
         n_features = 3 * 8 * 8
         # Test GaussianMixtureModel.
@@ -183,3 +168,56 @@ class MultipleChannelsTests(unittest.TestCase):
         # Test BernoulliMixtureModel.
         model = models.BernoulliMixtureModel(n_components=3, n_features=n_features)
         self._test_multiple_channels(model)
+
+
+class TestKernelDensityEstimators(unittest.TestCase):
+    def test_smoke_tests(self):
+        train_Xs = batch = torch.rand(4, 3)
+
+        # Test ParzenWindowKernel.
+        model = models.KernelDensityEstimator(
+            kernel=models.ParzenWindowKernel(bandwidth=0.1), train_Xs=train_Xs
+        )
+        model(batch)
+        model.sample(2)
+
+        # Test GaussianKernel.
+        model = models.KernelDensityEstimator(
+            kernel=models.GaussianKernel(bandwidth=0.1), train_Xs=train_Xs
+        )
+        model(batch)
+        model.sample(2)
+
+    def test_multidimensional_support_GaussianKernel(self):
+        # Gaussian 2D data.
+        train_Xs = torch.normal(torch.zeros((100, 2)), torch.ones((100, 2)))
+        kernel = models.GaussianKernel(bandwidth=1.0)
+        model = models.KernelDensityEstimator(train_Xs, kernel)
+
+        # Build meshgrid.
+        dx = 0.1
+        X = torch.arange(-8, 8, dx)
+        Y = torch.arange(-8, 8, dx)
+        xx, yy = torch.meshgrid(X, Y)
+        meshgrid = torch.stack((xx, yy), axis=2).view(-1, 2)
+
+        log_probs = model(meshgrid)
+        integral = torch.sum(torch.exp(log_probs) * dx * dx)
+        torch.testing.assert_allclose(integral, 1.0)
+
+    def test_multidimensional_support_ParzenWindowKernel(self):
+        # Gaussian 2D data.
+        train_Xs = torch.normal(torch.zeros((100, 2)), torch.ones((100, 2)))
+        kernel = models.ParzenWindowKernel(bandwidth=1.0)
+        model = models.KernelDensityEstimator(train_Xs, kernel)
+
+        # Build meshgrid.
+        dx = 0.1
+        X = torch.arange(-8, 8, dx)
+        Y = torch.arange(-8, 8, dx)
+        xx, yy = torch.meshgrid(X, Y)
+        meshgrid = torch.stack((xx, yy), axis=2).view(-1, 2)
+
+        log_probs = model(meshgrid)
+        integral = torch.sum(torch.exp(log_probs) * dx * dx)
+        torch.testing.assert_allclose(integral, 1.0)

@@ -22,7 +22,7 @@ To get started, click on one of the links below.
 To install `pytorch-generative`, clone the repository and install the requirements:
 
 ```
-git clone https://www.github.com/EugenHota/pytorch-generative
+git clone https://www.github.com/EugenHotaj/pytorch-generative
 cd pytorch-generative
 pip install -r requirements.txt
 ```

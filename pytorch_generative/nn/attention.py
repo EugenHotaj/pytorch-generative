@@ -3,6 +3,7 @@
 References (used throughout the code):
     [1]: https://arxiv.org/abs/1712.09763
     [2]: https://arxiv.org/abs/2006.16236
+    [3]: https://arxiv.org/abs/1706.03762
 """
 
 import functools
@@ -12,6 +13,25 @@ import torch
 from torch import autograd
 from torch import nn
 from torch.nn import functional as F
+
+
+def positional_encoding(d_model, max_len):
+    """Generates the sinusoidal positional encodings introduced in [3].
+
+    Copied from https://pytorch.org/tutorials/beginner/transformer_tutorial.html.
+
+    Args:
+        d_model: Dimension of the model (i.e. embedding dimension).
+        max_len: Maximum possible sequence length.
+    Return:
+        Tensor of shape [max_len, 1, d_model] containing the positional encodings.
+    """
+    position = torch.arange(max_len).unsqueeze(1)
+    div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+    positional_encoding = torch.zeros(max_len, 1, d_model)
+    positional_encoding[:, 0, 0::2] = torch.sin(position * div_term)
+    positional_encoding[:, 0, 1::2] = torch.cos(position * div_term)
+    return positional_encoding
 
 
 @functools.lru_cache(maxsize=32)

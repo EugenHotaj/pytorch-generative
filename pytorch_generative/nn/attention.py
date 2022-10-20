@@ -6,6 +6,7 @@ References (used throughout the code):
     [3]: https://arxiv.org/abs/1706.03762
 """
 
+import math
 import functools
 
 import numpy as np

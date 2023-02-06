@@ -201,7 +201,7 @@ class TestKernelDensityEstimators(unittest.TestCase):
 
         log_probs = model(meshgrid)
         integral = torch.sum(torch.exp(log_probs) * dx * dx)
-        torch.testing.assert_all_close(integral, 1.0)
+        torch.testing.assert_close(integral, torch.tensor(1.0))
 
     def test_multidimensional_support_ParzenWindowKernel(self):
         # Gaussian 2D data.
@@ -218,4 +218,4 @@ class TestKernelDensityEstimators(unittest.TestCase):
 
         log_probs = model(meshgrid)
         integral = torch.sum(torch.exp(log_probs) * dx * dx)
-        torch.testing.assert_all_close(integral, 1.0)
+        torch.testing.assert_close(integral, torch.tensor(1.0))

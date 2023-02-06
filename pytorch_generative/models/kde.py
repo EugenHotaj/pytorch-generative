@@ -54,7 +54,7 @@ class ParzenWindowKernel(Kernel):
         dims = tuple(range(len(abs_diffs.shape))[2:])
         dim = np.prod(abs_diffs.shape[2:])
         inside = torch.sum(abs_diffs / self.bandwidth <= 0.5, dim=dims) == dim
-        coef = 1 / self.bandwidth ** dim
+        coef = 1 / self.bandwidth**dim
         return torch.log((coef * inside).mean(dim=1))
 
     def sample(self, train_Xs):

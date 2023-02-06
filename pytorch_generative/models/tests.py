@@ -4,18 +4,16 @@ import tempfile
 import unittest
 
 import torch
-from torch import distributions
 
 from pytorch_generative import models
-from pytorch_generative.models import autoregressive
-from pytorch_generative.models import vae
+from pytorch_generative.models import autoregressive, vae
 
 
 class DummyLoader:
     """Dummy data loader used for integration testing."""
 
     def __init__(self, channels, size):
-        self._xs = torch.rand((1, channels, size, size))
+        self._xs = torch.randn((1, channels, size, size))
         self._ys = torch.tensor([0])
 
     def __iter__(self):

@@ -3,8 +3,7 @@
 import abc
 
 import torch
-from torch import distributions
-from torch import nn
+from torch import distributions, nn
 
 
 def _default_sample_fn(logits):
@@ -39,7 +38,7 @@ class GenerativeModel(abc.ABC, nn.Module):
 
 
 class AutoregressiveModel(GenerativeModel):
-    """The base class for Autoregressive generative models. """
+    """The base class for Autoregressive generative models."""
 
     def __init__(self, sample_fn=None):
         """Initializes a new AutoregressiveModel instance.

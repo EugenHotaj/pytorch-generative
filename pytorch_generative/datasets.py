@@ -1,18 +1,15 @@
 """Extra generative modeling benchmark datasets not provided by PyTorch."""
 
 import os
-import urllib
 
-import PIL
 import numpy as np
+import PIL
 import torch
 from torch import distributions
 from torch.nn import functional as F
 from torch.utils import data
-from torchvision import datasets
-from torchvision import transforms
-from torchvision.datasets import utils
-from torchvision.datasets import vision
+from torchvision import datasets, transforms
+from torchvision.datasets import utils, vision
 
 
 def _dynamically_binarize(x):
@@ -117,9 +114,9 @@ class BinarizedMNIST(vision.VisionDataset):
         """
         super().__init__(root, transform=transform)
         assert split in ("train", "valid", "test")
+        self.split = split
         self._raw_folder = os.path.join(self.root, "BinarizedMNIST", "raw")
         self._folder = os.path.join(self.root, "BinarizedMNIST")
-        self.train = train
         if not self._check_exists():
             self.download()
         self.data = torch.load(os.path.join(self._folder, split + ".pt"))
@@ -172,4 +169,4 @@ class BinarizedMNIST(vision.VisionDataset):
             torch.save(test_set, f)
 
     def extra_repr(self):
-        return "Split: {}".format("Train" if self.train else "Test")
+        return f"Split: {self.split}"

@@ -68,4 +68,4 @@ class AdaBelief(optim.Optimizer):
                 ema_avg_ = ema_avg / (1 - beta1 ** state["step"])
                 ema_var_ = ema_var / (1 - beta2 ** state["step"])
 
-                aaram.data.addcdiv_(-ema_avg_, ema_var_.sqrt() + 1e-10, value=lr)
+                param.data.addcdiv_(-ema_avg_, ema_var_.sqrt() + 1e-10, value=lr)

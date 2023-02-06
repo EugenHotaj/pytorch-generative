@@ -6,13 +6,12 @@ References (used throughout the code):
     [3]: https://arxiv.org/abs/1706.03762
 """
 
-import math
 import functools
+import math
 
 import numpy as np
 import torch
-from torch import autograd
-from torch import nn
+from torch import autograd, nn
 from torch.nn import functional as F
 
 
@@ -144,7 +143,7 @@ class CausalAttention(nn.Module):
         k, v = self._kv(x).split([self._embed_channels, self._out_channels], dim=1)
         k, v = _to_multihead(k), _to_multihead(v)
 
-        # Compute the causual attention weights.
+        # Compute the causal attention weights.
         mask = (
             _get_causal_mask(h * w, self._mask_center)
             .view(1, 1, h * w, h * w)
@@ -152,9 +151,12 @@ class CausalAttention(nn.Module):
         )
         attn = (q @ k.transpose(2, 3)) / np.sqrt(k.shape[-1])
         attn = attn.masked_fill(mask == 0, -np.inf)
+        # NOTE: When self._mask_center is True, the first row of the attention matrix
+        # will be NaNs. We replace the NaNs with 0s here to prevent downstream issues.
+
         attn = F.softmax(attn, dim=-1).masked_fill(mask == 0, 0)
 
-        # Attent to output for each head, stack, and project.
+        # Attend to output for each head, stack, and project.
         out = (attn @ v).transpose(2, 3).contiguous().view(n, -1, h, w)
         return self._proj(out)
 

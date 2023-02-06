@@ -8,9 +8,7 @@ import tempfile
 import time
 
 import torch
-from torch import nn
-from torch.nn import parallel
-from torch.nn import utils
+from torch.nn import parallel, utils
 from torch.utils import tensorboard
 
 
@@ -232,7 +230,7 @@ class Trainer:
             try:
                 self.restore_checkpoint()
             except FileNotFoundError:
-                pass  # No checkpoint found in self.log_dir; train from scratch.
+                print(f"No checkpoint found in {self.log_dir}. Training from scratch.")
 
         for _ in range(max_epochs - self._epoch):
             start_time = time.time()

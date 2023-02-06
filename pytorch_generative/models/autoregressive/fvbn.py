@@ -68,9 +68,7 @@ def reproduce(
     from torch import optim
     from torch.nn import functional as F
 
-    from pytorch_generative import datasets
-    from pytorch_generative import models
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets, models, trainer
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:

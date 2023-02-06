@@ -7,8 +7,9 @@ variables are related via the covariance function, with the whole process being 
 as p(f) = N(f | u(x), K(x, x').
 """
 
+import numpy as np
 import torch
-from torch import nn
+
 from pytorch_generative.models import base
 
 

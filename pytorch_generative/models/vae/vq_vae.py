@@ -12,8 +12,6 @@ References (used throughout the code):
     [1]: https://arxiv.org/pdf/1711.00937.pdf
 """
 
-from torch import nn
-
 from pytorch_generative.models import base
 from pytorch_generative.models.vae import vaes
 
@@ -108,9 +106,7 @@ def reproduce(
     from torch.nn import functional as F
     from torch.optim import lr_scheduler
 
-    from pytorch_generative import datasets
-    from pytorch_generative import models
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets, models, trainer
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:

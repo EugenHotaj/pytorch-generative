@@ -5,15 +5,13 @@ Warning: This module must be imported from Colab, otherwise it will crash.
 
 import collections
 import gc
-import time
-import os
 
-import PIL
-from google.colab import files
 import matplotlib
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
+import PIL
 import torch
+from google.colab import files
 from torchvision import transforms
 
 # Always use html5 for animations so they can be rendered inline on Colab.

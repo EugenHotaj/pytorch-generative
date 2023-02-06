@@ -5,7 +5,6 @@ References (used throughout the code):
     [2]: https://arxiv.org/abs/2003.04887
 """
 
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -114,5 +113,5 @@ class ReZeroWrapper(nn.Module):
         self._module = module
         self._alpha = nn.Parameter(torch.tensor([0.0]))
 
-    def forward(x):
+    def forward(self, x):
         return x + self._alpha * self._module(x)

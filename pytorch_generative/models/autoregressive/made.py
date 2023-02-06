@@ -14,8 +14,7 @@ feature and D is the dimensionality of X.
 
 import numpy as np
 import torch
-from torch import distributions
-from torch import nn
+from torch import distributions, nn
 
 from pytorch_generative.models import base
 
@@ -165,9 +164,7 @@ def reproduce(
     from torch import optim
     from torch.nn import functional as F
 
-    from pytorch_generative import datasets
-    from pytorch_generative import models
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets, models, trainer
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:

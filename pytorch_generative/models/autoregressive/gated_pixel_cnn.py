@@ -22,8 +22,6 @@ References (used throughout the code):
   [4]: https://arxiv.org/abs/1701.05517
 """
 
-import torch
-from torch import distributions
 from torch import nn
 
 from pytorch_generative import nn as pg_nn
@@ -116,7 +114,7 @@ class GatedPixelCNNLayer(nn.Module):
         # Compute vertical stack.
         vstack = self._vstack_Nx1(self._vstack_1xN(vstack_input))[:, :, :h, :]
         link = self._link(vstack)
-        vstack += self._vstack_1x1(vstack_input)
+        vstack = vstack + self._vstack_1x1(vstack_input)
         vstack = self._activation(vstack)
 
         # Compute horizontal stack.
@@ -127,7 +125,7 @@ class GatedPixelCNNLayer(nn.Module):
         # NOTE(eugenhotaj): We cannot use a residual connection for causal layers
         # otherwise we'll have access to future pixels.
         if not self._mask_center:
-            hstack += hstack_input
+            hstack = hstack + hstack_input
 
         return vstack, hstack, skip
 
@@ -219,9 +217,7 @@ def reproduce(
     from torch.nn import functional as F
     from torch.optim import lr_scheduler
 
-    from pytorch_generative import datasets
-    from pytorch_generative import models
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets, models, trainer
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:

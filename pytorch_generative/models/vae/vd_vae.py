@@ -317,7 +317,7 @@ class VeryDeepVAE(base.GenerativeModel):
             in_channels, out_channels=hidden_channels, kernel_size=3, padding=1
         )
         self._encoder = nn.ModuleList()
-        resolutions = [input_resolution // 2 ** i for i in range(len(stack_configs))]
+        resolutions = [input_resolution // 2**i for i in range(len(stack_configs))]
         encoder_blocks = [conf.n_encoder_blocks for conf in stack_configs]
         total_encoder_blocks = sum(encoder_blocks)
         for i, (res, n_blocks) in enumerate(zip(resolutions, encoder_blocks)):
@@ -437,9 +437,7 @@ def reproduce(
     from torch import optim
     from torch.nn import functional as F
 
-    from pytorch_generative import datasets
-    from pytorch_generative import models
-    from pytorch_generative import trainer
+    from pytorch_generative import datasets, models, trainer
 
     train_loader, test_loader = debug_loader, debug_loader
     if train_loader is None:

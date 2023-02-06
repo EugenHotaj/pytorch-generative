@@ -16,7 +16,7 @@ def to_var(log_std):
 @torch.jit.script
 def unit_gaussian_kl_div(mean, log_std):
     """Returns `KL(p || N(0, 1))` where `p` is a Gaussian with diagonal covariance."""
-    return -0.5 * (1 + 2 * log_std - to_var(log_std) - mean ** 2)
+    return -0.5 * (1 + 2 * log_std - to_var(log_std) - mean**2)
 
 
 @torch.jit.script

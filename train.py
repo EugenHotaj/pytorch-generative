@@ -1,11 +1,11 @@
 """Main training script for models."""
 
-import os
 import argparse
+import os
 
 import torch
-import pytorch_generative as pg
 
+import pytorch_generative as pg
 
 MODEL_DICT = {
     "beta_vae": pg.models.vae.beta_vae,

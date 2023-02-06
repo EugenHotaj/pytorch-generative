@@ -1,8 +1,4 @@
-from pytorch_generative import datasets
-from pytorch_generative import debug
-from pytorch_generative import models
-from pytorch_generative import nn
-from pytorch_generative import trainer
+from pytorch_generative import datasets, debug, models, nn, trainer
 
 __all__ = ["datasets", "debug", "models", "nn", "trainer"]
 

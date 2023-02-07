@@ -93,6 +93,7 @@ class VAE(base.GenerativeModel):
         latents = vaes.sample_from_gaussian(mean, log_std)
         return self._decoder(latents), kl_div
 
+    @torch.no_grad()
     def sample(self, n_samples):
         """Generates a batch of n_samples."""
         latent_size = self._h // 2 ** (self._total_stride // 2)

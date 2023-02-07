@@ -23,7 +23,7 @@ class NADE(base.AutoregressiveModel):
 
         Args:
             input_dim: The dimension of the input.
-            hidden_dim: The dimmension of the hidden layer. NADE only supports one
+            hidden_dim: The dimension of the hidden layer. NADE only supports one
                 hidden layer.
         """
         super().__init__()
@@ -86,11 +86,11 @@ class NADE(base.AutoregressiveModel):
         """
         return self._forward(x)[0]
 
+    @torch.no_grad()
     def sample(self, n_samples=None, conditioned_on=None):
         """See the base class."""
-        with torch.no_grad():
-            conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
-            return self._forward(conditioned_on)[1]
+        conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
+        return self._forward(conditioned_on)[1]
 
 
 def reproduce(

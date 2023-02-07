@@ -57,6 +57,7 @@ class ParzenWindowKernel(Kernel):
         coef = 1 / self.bandwidth**dim
         return torch.log((coef * inside).mean(dim=1))
 
+    @torch.no_grad()
     def sample(self, train_Xs):
         device = train_Xs.device
         noise = (torch.rand(train_Xs.shape, device=device) - 0.5) * self.bandwidth
@@ -77,9 +78,10 @@ class GaussianKernel(Kernel):
 
         return torch.logsumexp(log_exp - Z, dim=-1)
 
+    @torch.no_grad()
     def sample(self, train_Xs):
         device = train_Xs.device
-        noise = torch.randn(train_Xs.shape) * self.bandwidth
+        noise = torch.randn(train_Xs.shape, device=device) * self.bandwidth
         return train_Xs + noise
 
 
@@ -107,6 +109,7 @@ class KernelDensityEstimator(base.GenerativeModel):
     def forward(self, x):
         return self.kernel(x, self.train_Xs)
 
+    @torch.no_grad()
     def sample(self, n_samples):
         idxs = np.random.choice(range(len(self.train_Xs)), size=n_samples)
         return self.kernel.sample(self.train_Xs[idxs])

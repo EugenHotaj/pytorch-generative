@@ -54,12 +54,12 @@ class MixtureModel(base.GenerativeModel):
     def _component_sample(self, idxs):
         """Returns samples from the component distributions conditioned on idxs."""
 
+    @torch.no_grad()
     def sample(self, n_samples):
-        with torch.no_grad():
-            shape = (n_samples,)
-            idxs = distributions.Categorical(logits=self.mixture_logits).sample(shape)
-            sample = self._component_sample(idxs)
-            return sample.view(n_samples, *self._original_shape[1:])
+        shape = (n_samples,)
+        idxs = distributions.Categorical(logits=self.mixture_logits).sample(shape)
+        sample = self._component_sample(idxs)
+        return sample.view(n_samples, *self._original_shape[1:])
 
 
 class GaussianMixtureModel(MixtureModel):

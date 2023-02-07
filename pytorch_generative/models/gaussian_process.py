@@ -44,6 +44,7 @@ class GaussianProcess(base.GenerativeModel):
 
     # TODO(eugenhotaj): Figure out why PyTorch claims the covariance matrix is not
     # positive semidefinite.
+    @torch.no_grad()
     def sample(self, x, n_samples):
         """Samples n_samples from the Gaussian process at the given location.
 
@@ -56,9 +57,8 @@ class GaussianProcess(base.GenerativeModel):
         Returns:
             The samples.
         """
-        with torch.no_grad():
-            mu, sig = self.predict(x)
-            mu, sig = mu.numpy(), sig.numpy()
+        mu, sig = self.predict(x)
+        mu, sig = mu.numpy(), sig.numpy()
         sample = np.random.multivariate_normal(mu.squeeze(), sig, size=(n_samples,))
         return torch.tensor(sample)
 

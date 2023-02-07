@@ -402,6 +402,7 @@ class VeryDeepVAE(base.GenerativeModel):
 
         return self._output(x), kl_div
 
+    @torch.no_grad()
     def sample(self, n_samples):
         x = torch.zeros_like(self._biases[-1]).repeat(n_samples, 1, 1, 1)
         for stack, bias in zip(self._decoder, reversed(self._biases)):

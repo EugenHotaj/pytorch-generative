@@ -120,22 +120,22 @@ class MADE(base.AutoregressiveModel):
         masks, _ = self._sample_masks()
         return self._forward(x, masks)
 
+    @torch.no_grad()
     def sample(self, n_samples, conditioned_on=None):
         """See the base class."""
-        with torch.no_grad():
-            conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
-            out_shape = conditioned_on.shape
-            conditioned_on = conditioned_on.view(n_samples, -1)
+        conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
+        out_shape = conditioned_on.shape
+        conditioned_on = conditioned_on.view(n_samples, -1)
 
-            masks, ordering = self._sample_masks()
-            ordering = np.argsort(ordering)
-            for dim in ordering:
-                out = self._forward(conditioned_on, masks)[:, dim]
-                out = distributions.Bernoulli(probs=out).sample()
-                conditioned_on[:, dim] = torch.where(
-                    conditioned_on[:, dim] < 0, out, conditioned_on[:, dim]
-                )
-            return conditioned_on.view(out_shape)
+        masks, ordering = self._sample_masks()
+        ordering = np.argsort(ordering)
+        for dim in ordering:
+            out = self._forward(conditioned_on, masks)[:, dim]
+            out = distributions.Bernoulli(probs=out).sample()
+            conditioned_on[:, dim] = torch.where(
+                conditioned_on[:, dim] < 0, out, conditioned_on[:, dim]
+            )
+        return conditioned_on.view(out_shape)
 
 
 def reproduce(

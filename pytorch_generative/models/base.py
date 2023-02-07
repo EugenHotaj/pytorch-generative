@@ -63,6 +63,7 @@ class AutoregressiveModel(GenerativeModel):
         return conditioned_on
 
     # TODO(eugenhotaj): This function does not handle subpixel sampling correctly.
+    @torch.no_grad()
     def sample(self, n_samples=None, conditioned_on=None):
         """Generates new samples from the model.
 
@@ -74,16 +75,15 @@ class AutoregressiveModel(GenerativeModel):
                 values >= 0 are left unchanged. If 'None', an unconditional sample is
                 generated.
         """
-        with torch.no_grad():
-            conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
-            n, c, h, w = conditioned_on.shape
-            for row in range(h):
-                for col in range(w):
-                    out = self.forward(conditioned_on)[:, :, row, col]
-                    out = self._sample_fn(out).view(n, c)
-                    conditioned_on[:, :, row, col] = torch.where(
-                        conditioned_on[:, :, row, col] < 0,
-                        out,
-                        conditioned_on[:, :, row, col],
-                    )
-            return conditioned_on
+        conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
+        n, c, h, w = conditioned_on.shape
+        for row in range(h):
+            for col in range(w):
+                out = self.forward(conditioned_on)[:, :, row, col]
+                out = self._sample_fn(out).view(n, c)
+                conditioned_on[:, :, row, col] = torch.where(
+                    conditioned_on[:, :, row, col] < 0,
+                    out,
+                    conditioned_on[:, :, row, col],
+                )
+        return conditioned_on

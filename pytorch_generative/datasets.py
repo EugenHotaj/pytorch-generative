@@ -5,6 +5,7 @@ import os
 import numpy as np
 import PIL
 import torch
+from sklearn import datasets as sk_datasets
 from torch import distributions
 from torch.nn import functional as F
 from torch.utils import data
@@ -21,14 +22,15 @@ def _resize_to_32(x):
 
 
 def get_mnist_loaders(batch_size, dynamically_binarize=False, resize_to_32=False):
-    """Create train and test loaders for the MNIST dataset.
+    """Creates train and test loaders for the MNIST dataset.
 
     Args:
-        batch_size: The batch size to use.
-        dynamically_binarize: Whether to dynamically  binarize images values to {0, 1}.
+        batch_size: Batch size to use.
+        dynamically_binarize: Whether to dynamically binarize images values to {0, 1}.
         resize_to_32: Whether to resize the images to 32x32.
+
     Returns:
-        Tuple of (train_loader, test_loader).
+        Tuple of train_loader, test_loader.
     """
     transform = [transforms.ToTensor()]
     if dynamically_binarize:
@@ -48,41 +50,6 @@ def get_mnist_loaders(batch_size, dynamically_binarize=False, resize_to_32=False
         num_workers=os.cpu_count(),
     )
     return train_loader, test_loader
-
-
-def get_cifar10_loaders(batch_size, normalize=False):
-    """Create train and test loaders for the CIFAR10 dataset.
-
-    Args:
-        batch_size: The batch size to use.
-        normalize: Whether to normalize images to be zero mean, unit variance.
-    Returns:
-        Tuple of (train_loader, test_loader).
-    """
-    transform = [transforms.ToTensor()]
-    if normalize:
-        transform.append(
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-        )
-    transform = transforms.Compose(transform)
-    train_loader = data.DataLoader(
-        datasets.CIFAR10("/tmp/data", train=True, download=True, transform=transform),
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=os.cpu_count(),
-    )
-    test_loader = data.DataLoader(
-        datasets.CIFAR10("/tmp/data", train=False, download=True, transform=transform),
-        batch_size=batch_size,
-        num_workers=os.cpu_count(),
-    )
-    return train_loader, test_loader
-
-
-def _read_image_file(path, shape):
-    with open(path, "rb") as f:
-        images = np.loadtxt(f, delimiter=" ", dtype=np.uint8) * 255
-    return torch.from_numpy(images).view(-1, *shape)
 
 
 class BinarizedMNIST(vision.VisionDataset):
@@ -124,7 +91,7 @@ class BinarizedMNIST(vision.VisionDataset):
     def __getitem__(self, index):
         """Returns the tuple (img, None) with the given index."""
         img = self.data[index]
-        # Return PIL images to be connsistent with other datasets.
+        # Return PIL images to be consistent with other datasets.
         img = PIL.Image.fromarray(img.numpy(), mode="L")
         if self.transform is not None:
             img = self.transform(img)
@@ -170,3 +137,74 @@ class BinarizedMNIST(vision.VisionDataset):
 
     def extra_repr(self):
         return f"Split: {self.split}"
+
+
+def _read_image_file(path, shape):
+    with open(path, "rb") as f:
+        images = np.loadtxt(f, delimiter=" ", dtype=np.uint8) * 255
+    return torch.from_numpy(images).view(-1, *shape)
+
+
+def get_cifar10_loaders(batch_size, normalize=False):
+    """Creates train and test loaders for the CIFAR10 dataset.
+
+    Args:
+        batch_size: Batch size to use.
+        normalize: Whether to normalize images to be zero mean, unit variance.
+
+    Returns:
+        Tuple of train_loader, test_loader.
+    """
+    transform = [transforms.ToTensor()]
+    if normalize:
+        transform.append(
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+        )
+    transform = transforms.Compose(transform)
+    train_loader = data.DataLoader(
+        datasets.CIFAR10("/tmp/data", train=True, download=True, transform=transform),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=os.cpu_count(),
+    )
+    test_loader = data.DataLoader(
+        datasets.CIFAR10("/tmp/data", train=False, download=True, transform=transform),
+        batch_size=batch_size,
+        num_workers=os.cpu_count(),
+    )
+    return train_loader, test_loader
+
+
+def get_blobs_loaders(batch_size, n_train=1000, n_test=200, n_features=2, n_centers=2):
+    """Creates train and test loaders for the SKLearn blobs synthetic dataset.
+
+    Args:
+        batch_size: Batch size to use.
+        n_train: Number of training examples to generate.
+        n_test: Number of test examples to generate.
+        n_features: Number of features per generated example.
+        n_centers: How many blobs to generate.
+
+    Returns:
+        Tuple of train_loader, test_loader.
+    """
+    xs, _ = sk_datasets.make_blobs(
+        n_samples=n_train + n_test, n_features=n_features, centers=n_centers
+    )
+    xs = torch.tensor(xs, dtype=torch.float32)
+    train_xs, test_xs = xs[:n_train], xs[n_train:]
+    mean, std = train_xs.mean(dim=0), train_xs.std(dim=0)
+    train_xs, test_xs = (train_xs - mean) / std, (test_xs - mean) / std
+    train_loader = data.DataLoader(
+        data.TensorDataset(train_xs),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=os.cpu_count(),
+    )
+    test_loader = data.DataLoader(
+        data.TensorDataset(test_xs),
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=os.cpu_count(),
+    )
+    return train_loader, test_loader

@@ -1,5 +1,7 @@
 """Implementation of the Non-linear Independent Components Estimation (NICE) [1].
 
+TODO(eugenhotaj): List out modifications compared to [1].
+
 References (used throughout the code):
   [1]: https://arxiv.org/abs/1410.8516
 """
@@ -93,10 +95,13 @@ class NICE(base.GenerativeModel):
             reverse = not reverse
         self.net = nn.Sequential(*net)
 
+    @base.auto_reshape
     def forward(self, x):
         """Inverse mapping from the inputs to the prior (X -> Z)."""
         return self.net(x)
 
+    @torch.no_grad()
+    @base.auto_reshape
     def sample(self, n_samples, temp=1.0):
         """See the base class.
 
@@ -105,7 +110,7 @@ class NICE(base.GenerativeModel):
             temp: What temperature to use when sampling. Lower temperature produces
                 higher quality samples with lower diversity.
         """
-        h = torch.randn(n_samples, self._c) / temp
+        h = torch.randn(n_samples, self._c) * temp
         for block in reversed(self.net):
             h = block.inverse(h)
         return h

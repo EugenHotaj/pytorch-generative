@@ -45,11 +45,6 @@ class NADE(base.AutoregressiveModel):
             (p_hat, x_hat) where p_hat is the probability distribution over dimensions
             and x_hat is sampled from p_hat.
         """
-        # If the input is an image, flatten it during the forward pass.
-        original_shape = x.shape
-        if len(x.shape) > 2:
-            x = x.view(original_shape[0], -1)
-
         p_hat, x_hat = [], []
         batch_size = 1 if x is None else x.shape[0]
         # Only the bias is used to compute the first hidden unit so we must replicate it
@@ -68,13 +63,10 @@ class NADE(base.AutoregressiveModel):
             # We do not need to add self._in_b[i:i+1] when computing the other hidden
             # units since it was already added when computing the first hidden unit.
             a = a + x_i @ self._in_W[:, i : i + 1].t()
-        if x_hat:
-            return (
-                torch.cat(p_hat, dim=1).view(original_shape),
-                torch.cat(x_hat, dim=1).view(original_shape),
-            )
-        return []
 
+        return torch.cat(p_hat, dim=1), torch.cat(x_hat, dim=1) if x_hat else []
+
+    @base.auto_reshape
     def forward(self, x):
         """Computes the forward pass.
 
@@ -87,6 +79,7 @@ class NADE(base.AutoregressiveModel):
         return self._forward(x)[0]
 
     @torch.no_grad()
+    @base.auto_reshape
     def sample(self, n_samples=None, conditioned_on=None):
         """See the base class."""
         conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)

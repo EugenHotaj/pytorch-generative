@@ -10,6 +10,22 @@ def _default_sample_fn(logits):
     return distributions.Bernoulli(logits=logits).sample()
 
 
+def auto_reshape(fn):
+    """Decorator which flattens image inputs and reshapes them before returning.
+
+    This is used to enable non-convolutional models to transparently work on images.
+    """
+
+    def wrapped_fn(self, x, *args, **kwargs):
+        original_shape = x.shape
+        if len(original_shape) > 2:
+            x = x.view(original_shape[0], -1)
+        y = fn(self, x, *args, **kwargs)
+        return y.view(original_shape)
+
+    return wrapped_fn
+
+
 class GenerativeModel(abc.ABC, nn.Module):
     """Base class inherited by all generative models in pytorch-generative.
 
@@ -23,10 +39,10 @@ class GenerativeModel(abc.ABC, nn.Module):
         * A `device` property which returns the device of the model's parameters.
     """
 
-    def __call__(self, *args, **kwargs):
-        if getattr(self, "_c", None) is None and len(args[0].shape) == 4:
-            _, self._c, self._h, self._w = args[0].shape
-        return super().__call__(*args, **kwargs)
+    def __call__(self, x, *args, **kwargs):
+        if getattr(self, "_c", None) is None and len(x.shape) == 4:
+            _, self._c, self._h, self._w = x.shape
+        return super().__call__(x, *args, **kwargs)
 
     @property
     def device(self):
@@ -62,7 +78,6 @@ class AutoregressiveModel(GenerativeModel):
             conditioned_on = conditioned_on.clone()
         return conditioned_on
 
-    # TODO(eugenhotaj): This function does not handle subpixel sampling correctly.
     @torch.no_grad()
     def sample(self, n_samples=None, conditioned_on=None):
         """Generates new samples from the model.

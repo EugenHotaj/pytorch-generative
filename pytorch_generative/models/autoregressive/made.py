@@ -94,18 +94,14 @@ class MADE(base.AutoregressiveModel):
 
         return [torch.from_numpy(mask.astype(np.uint8)) for mask in masks], conn[-1]
 
+    @base.auto_reshape
     def _forward(self, x, masks):
-        # If the input is an image, flatten it during the forward pass.
-        original_shape = x.shape
-        if len(original_shape) > 2:
-            x = x.view(original_shape[0], -1)
-
         layers = [
             layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)
         ]
         for layer, mask in zip(layers, masks):
             layer.set_mask(mask)
-        return self._net(x).view(original_shape)
+        return self._net(x)
 
     def forward(self, x):
         """Computes the forward pass.
@@ -121,12 +117,10 @@ class MADE(base.AutoregressiveModel):
         return self._forward(x, masks)
 
     @torch.no_grad()
+    @base.auto_reshape
     def sample(self, n_samples, conditioned_on=None):
         """See the base class."""
         conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
-        out_shape = conditioned_on.shape
-        conditioned_on = conditioned_on.view(n_samples, -1)
-
         masks, ordering = self._sample_masks()
         ordering = np.argsort(ordering)
         for dim in ordering:
@@ -135,7 +129,7 @@ class MADE(base.AutoregressiveModel):
             conditioned_on[:, dim] = torch.where(
                 conditioned_on[:, dim] < 0, out, conditioned_on[:, dim]
             )
-        return conditioned_on.view(out_shape)
+        return conditioned_on
 
 
 def reproduce(

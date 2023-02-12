@@ -1,2 +1,0 @@
-# Override Jupyter in Github language stats otherwise it drowns out everything else.
-*.ipynb linguist-generated

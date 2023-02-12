@@ -94,7 +94,6 @@ class MADE(base.AutoregressiveModel):
 
         return [torch.from_numpy(mask.astype(np.uint8)) for mask in masks], conn[-1]
 
-    @base.auto_reshape
     def _forward(self, x, masks):
         layers = [
             layer for layer in self._net.modules() if isinstance(layer, MaskedLinear)
@@ -103,6 +102,7 @@ class MADE(base.AutoregressiveModel):
             layer.set_mask(mask)
         return self._net(x)
 
+    @base.auto_reshape
     def forward(self, x):
         """Computes the forward pass.
 
@@ -117,19 +117,20 @@ class MADE(base.AutoregressiveModel):
         return self._forward(x, masks)
 
     @torch.no_grad()
-    @base.auto_reshape
     def sample(self, n_samples, conditioned_on=None):
         """See the base class."""
         conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
+        return self._sample(conditioned_on)
+
+    @base.auto_reshape
+    def _sample(self, x):
         masks, ordering = self._sample_masks()
         ordering = np.argsort(ordering)
         for dim in ordering:
-            out = self._forward(conditioned_on, masks)[:, dim]
+            out = self._forward(x, masks)[:, dim]
             out = distributions.Bernoulli(probs=out).sample()
-            conditioned_on[:, dim] = torch.where(
-                conditioned_on[:, dim] < 0, out, conditioned_on[:, dim]
-            )
-        return conditioned_on
+            x[:, dim] = torch.where(x[:, dim] < 0, out, x[:, dim])
+        return x
 
 
 def reproduce(

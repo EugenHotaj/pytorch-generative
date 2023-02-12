@@ -79,11 +79,14 @@ class NADE(base.AutoregressiveModel):
         return self._forward(x)[0]
 
     @torch.no_grad()
-    @base.auto_reshape
     def sample(self, n_samples=None, conditioned_on=None):
         """See the base class."""
         conditioned_on = self._get_conditioned_on(n_samples, conditioned_on)
-        return self._forward(conditioned_on)[1]
+        return self._sample(conditioned_on)
+
+    @base.auto_reshape
+    def _sample(self, x):
+        return self._forward(x)[1]
 
 
 def reproduce(

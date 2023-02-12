@@ -219,3 +219,27 @@ class TestKernelDensityEstimators(unittest.TestCase):
         log_probs = model(meshgrid)
         integral = torch.sum(torch.exp(log_probs) * dx * dx)
         torch.testing.assert_close(integral, torch.tensor(1.0))
+
+
+class AutoReshapeTest(unittest.TestCase):
+    def _test_auto_reshape(self, model, conditional_sample=False):
+        batch = torch.rand(2, 3, 8, 8)
+
+        # Test forward.
+        self.assertEqual(4, model(batch).dim())
+
+        # Test unconditional sampling.
+        self.assertEqual(4, model.sample(n_samples=2).dim())
+
+        # Test conditional sampling
+        if conditional_sample:
+            batch[:, :, 1:, :] = -1
+            self.assertEqual(4, model.sample(conditioned_on=batch).dim())
+
+    def test_NADE(self):
+        model = models.NADE(input_dim=3 * 8 * 8, hidden_dim=10)
+        self._test_auto_reshape(model)
+
+    def test_MADE(self):
+        model = models.MADE(input_dim=3 * 8 * 8, hidden_dims=[10])
+        self._test_auto_reshape(model)

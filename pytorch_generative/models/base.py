@@ -18,8 +18,7 @@ def auto_reshape(fn):
 
     def wrapped_fn(self, x, *args, **kwargs):
         original_shape = x.shape
-        if len(original_shape) > 2:
-            x = x.view(original_shape[0], -1)
+        x = x.view(original_shape[0], -1)
         y = fn(self, x, *args, **kwargs)
         return y.view(original_shape)
 
@@ -40,7 +39,8 @@ class GenerativeModel(abc.ABC, nn.Module):
     """
 
     def __call__(self, x, *args, **kwargs):
-        if getattr(self, "_c", None) is None and len(x.shape) == 4:
+        """Saves input tensor attributes so they can be accessed during sampling."""
+        if getattr(self, "_c", None) is None and x.dim() == 4:
             _, self._c, self._h, self._w = x.shape
         return super().__call__(x, *args, **kwargs)
 

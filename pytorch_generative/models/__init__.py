@@ -7,6 +7,7 @@ from pytorch_generative.models.autoregressive.made import MADE
 from pytorch_generative.models.autoregressive.nade import NADE
 from pytorch_generative.models.autoregressive.pixel_cnn import PixelCNN
 from pytorch_generative.models.autoregressive.pixel_snail import PixelSNAIL
+from pytorch_generative.models.flow.nice import NICE
 from pytorch_generative.models.kde import (
     GaussianKernel,
     KernelDensityEstimator,

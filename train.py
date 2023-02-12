@@ -14,6 +14,7 @@ MODEL_DICT = {
     "image_gpt": pg.models.autoregressive.image_gpt,
     "made": pg.models.autoregressive.made,
     "nade": pg.models.autoregressive.nade,
+    "nice": pg.models.flow.nice,
     "pixel_cnn": pg.models.autoregressive.pixel_cnn,
     "pixel_snail": pg.models.autoregressive.pixel_snail,
     "vae": pg.models.vae.vae,

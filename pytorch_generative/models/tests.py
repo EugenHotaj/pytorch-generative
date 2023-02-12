@@ -226,7 +226,10 @@ class AutoReshapeTest(unittest.TestCase):
         batch = torch.rand(2, 3, 8, 8)
 
         # Test forward.
-        self.assertEqual(4, model(batch).dim())
+        result = model(batch)
+        # Handle cases where forward returns loss as well.
+        result = result if type(result) is tuple else (result,)
+        self.assertEqual(4, result[0].dim())
 
         # Test unconditional sampling.
         self.assertEqual(4, model.sample(n_samples=2).dim())
@@ -242,4 +245,10 @@ class AutoReshapeTest(unittest.TestCase):
 
     def test_MADE(self):
         model = models.MADE(input_dim=3 * 8 * 8, hidden_dims=[10])
+        self._test_auto_reshape(model)
+
+    def test_NICE(self):
+        model = models.NICE(
+            n_features=3 * 8 * 8, n_hidden_layers=2, n_hidden_features=10
+        )
         self._test_auto_reshape(model)

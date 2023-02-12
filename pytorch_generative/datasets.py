@@ -17,24 +17,36 @@ def _dynamically_binarize(x):
     return distributions.Bernoulli(probs=x).sample()
 
 
+def _dequantize(x):
+    return (x * 255 + torch.rand(x.shape)) / 256
+
+
 def _resize_to_32(x):
     return F.pad(x, (2, 2, 2, 2))
 
 
-def get_mnist_loaders(batch_size, dynamically_binarize=False, resize_to_32=False):
+def get_mnist_loaders(
+    batch_size, dynamically_binarize=False, dequantize=False, resize_to_32=False
+):
     """Creates train and test loaders for the MNIST dataset.
 
     Args:
         batch_size: Batch size to use.
         dynamically_binarize: Whether to dynamically binarize images values to {0, 1}.
+        dequantize: Whether to dequantize pixel values by adding 1/256 uniform noise.
         resize_to_32: Whether to resize the images to 32x32.
 
     Returns:
         Tuple of train_loader, test_loader.
     """
+    if dynamically_binarize and dequantize:
+        raise ValueError("Cannot specify both dynamically_binarize and dequantize.")
+
     transform = [transforms.ToTensor()]
     if dynamically_binarize:
         transform.append(_dynamically_binarize)
+    if dequantize:
+        transform.append(_dequantize)
     if resize_to_32:
         transform.append(_resize_to_32)
     transform = transforms.Compose(transform)

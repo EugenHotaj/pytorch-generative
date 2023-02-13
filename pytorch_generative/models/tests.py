@@ -6,7 +6,7 @@ import unittest
 import torch
 
 from pytorch_generative import models
-from pytorch_generative.models import autoregressive, vae
+from pytorch_generative.models import autoregressive, flow, vae
 
 
 class DummyLoader:
@@ -72,6 +72,9 @@ class IntegrationTests(unittest.TestCase):
 
     def test_VectorQuantizedVAE2(self):
         self._test_integration(vae.vq_vae_2, in_channels=3)
+
+    def test_NICE(self):
+        self._test_integration(flow.nice)
 
 
 class MultipleChannelsTests(unittest.TestCase):
@@ -154,6 +157,15 @@ class MultipleChannelsTests(unittest.TestCase):
             ],
             latent_channels=1,
             bottleneck_channels=1,
+        )
+        self._test_multiple_channels(model)
+
+    def test_NICE(self):
+        model = models.NICE(
+            n_features=3 * 8 * 8,
+            n_coupling_blocks=4,
+            n_hidden_layers=2,
+            n_hidden_features=10,
         )
         self._test_multiple_channels(model)
 

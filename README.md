@@ -15,6 +15,7 @@ To get started, click on one of the links below.
 * [Supported Algorithms](#supported-algorithms) 
   * [Autoregressive Models](#autoregressive-models)
   * [Variational Autoencoders](#variational-autoencoders)
+  * [Normalizing Flows](#normalizing-flows)
   * [Miscellaneous](#miscellaneous)
 
 ## Installation
@@ -189,7 +190,6 @@ We train likelihood based models on dynamically [Binarized MNIST](https://papers
 
 ### Variational Autoencoders
 
-
 NOTE: The results below are the (variational) upper bound on the negative log likelihod (or equivalently, the lower bound on the log likelihod). 
 
 | Algorithm | [Binarized MNIST](https://paperswithcode.com/sota/image-generation-on-binarized-mnist) (nats) | Links |
@@ -199,6 +199,15 @@ NOTE: The results below are the (variational) upper bound on the negative log li
 | BetaVAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/beta_vae.py), [Paper](https://openreview.net/pdf?id=Sy2fzU9gl) |
 | VQ-VAE | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vq_vae.py), [Paper](https://arxiv.org/abs/1711.00937) |
 | VQ-VAE-2 | N/A | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/vae/vq_vae_2.py), [Paper](https://arxiv.org/abs/1906.00446) |
+
+
+### Normalizing Flows
+
+
+| Algorithm | [MNIST](https://paperswithcode.com/sota/image-generation-on-mnist) (log-likelihood) | Links |
+| --- | ---| --- |
+| NICE | 1990.0+| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/flow/nice.py), [Paper](https://arxiv.org/abs/1410.8516) |
+
 
 ### Miscellaneous
 

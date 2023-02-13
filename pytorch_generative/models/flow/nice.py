@@ -146,7 +146,11 @@ class NICE(base.GenerativeModel):
             temp: What temperature to use when sampling. Lower temperature produces
                 higher quality samples with lower diversity.
         """
+        # NOTE: Technically this should sample from the logistic distribution when using
+        # a logistic prior. However, we sample from the standard normal for both
+        # logistic and normal priors and use the temperature to control the variance.
         x = torch.randn((n_samples, self._c, self._h, self._w)) * temp
+        x = x.to(self.device)
         return self._inverse(x)
 
     @base.auto_reshape
@@ -155,3 +159,68 @@ class NICE(base.GenerativeModel):
         for block in reversed(self.net):
             x = block.inverse(x)
         return x
+
+
+def reproduce(
+    n_epochs=150,
+    batch_size=1024,
+    log_dir="/tmp/run",
+    n_gpus=1,
+    device_id=0,
+    debug_loader=None,
+):
+    """Training script with defaults to reproduce results.
+
+    The code inside this function is self contained and can be used as a top level
+    training script, e.g. by copy/pasting it into a Jupyter notebook.
+
+    Args:
+        n_epochs: Number of epochs to train for.
+        batch_size: Batch size to use for training and evaluation.
+        log_dir: Directory where to log trainer state and TensorBoard summaries.
+        n_gpus: Number of GPUs to use for training the model. If 0, uses CPU.
+        device_id: The device_id of the current GPU when training on multiple GPUs.
+        debug_loader: Debug DataLoader which replaces the default training and
+            evaluation loaders if not 'None'. Do not use unless you're writing unit
+            tests.
+    """
+    from torch import optim
+    from torch.nn import functional as F
+
+    from pytorch_generative import datasets, models, trainer
+
+    train_loader, test_loader = debug_loader, debug_loader
+    if train_loader is None:
+        train_loader, test_loader = datasets.get_mnist_loaders(
+            batch_size, dequantize=True
+        )
+
+    model = models.NICE(
+        n_features=784, n_coupling_blocks=4, n_hidden_layers=5, n_hidden_features=1000
+    )
+    # NOTE: We found most hyperparameters from the paper give bad results so we only use
+    # the learning rate.
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+    def loss_fn(x, _, preds):
+        preds, log_det_J = preds
+        log_prob = -(F.softplus(preds) + F.softplus(-preds)).sum(dim=(1, 2, 3))
+        loss = log_prob + log_det_J
+        return {
+            "loss": -loss.mean(),
+            "prior_log_likelihood": log_prob.mean(),
+            "log_det_J": log_det_J.mean(),
+        }
+
+    trainer = trainer.Trainer(
+        model=model,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        train_loader=train_loader,
+        eval_loader=test_loader,
+        lr_scheduler=None,
+        log_dir=log_dir,
+        n_gpus=n_gpus,
+        device_id=device_id,
+    )
+    trainer.interleaved_train_and_eval(n_epochs)

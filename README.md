@@ -203,6 +203,8 @@ NOTE: The results below are the (variational) upper bound on the negative log li
 
 ### Normalizing Flows
 
+NOTE: Bits per dimension (bits/dim) can be calculated as `(nll / 784 + log(256)) / log(2)` where `784` is the MNIST dimension,
+`log(256)` accounts for dequantizing pixel values, and `log(2.0)` converts from natural log to base 2.  
 
 | Algorithm | [MNIST](https://paperswithcode.com/sota/image-generation-on-mnist) (bits/dim) | Links |
 | --- | ---| --- |

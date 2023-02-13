@@ -204,9 +204,9 @@ NOTE: The results below are the (variational) upper bound on the negative log li
 ### Normalizing Flows
 
 
-| Algorithm | [MNIST](https://paperswithcode.com/sota/image-generation-on-mnist) (log-likelihood) | Links |
+| Algorithm | [MNIST](https://paperswithcode.com/sota/image-generation-on-mnist) (bits/dim) | Links |
 | --- | ---| --- |
-| NICE | 1990.0+| [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/flow/nice.py), [Paper](https://arxiv.org/abs/1410.8516) |
+| NICE | 4.34 | [Code](https://github.com/EugenHotaj/pytorch-generative/blob/master/pytorch_generative/models/flow/nice.py), [Paper](https://arxiv.org/abs/1410.8516) |
 
 
 ### Miscellaneous

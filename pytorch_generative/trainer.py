@@ -30,9 +30,8 @@ class Trainer:
         lr_scheduler=None,
         clip_grad_norm=None,
         skip_grad_norm=None,
-        sample_epochs=None,
-        sample_fn=None,
         log_dir=None,
+        sample_epochs=3,
         save_checkpoint_epochs=1,
         n_gpus=0,
         device_id=None,
@@ -52,14 +51,11 @@ class Trainer:
                 after every batch.
             clip_grad_norm: L2 norm to scale gradients to if their norm is greater.
             skip_grad_norm: Maximum L2 norm above which gradients are discarded.
-            sample_epochs: Number of epochs to wait between generating new image samples
-                and logging them to TensorBoard. If not `None`, `sample_fn` must be
-                provided.
-            sample_fn: A `fn(model)->Tensor` which returns an NCHW Tensor of images to
-                log to TensorBoard.
             log_dir: The directory where to log checkpoints and TensorBoard metrics. If
                 `None` a temporary directory is created (note that this directory is not
                 cleaned up automatically).
+            sample_epochs: Number of epochs to wait before generating and logging new
+                sample to TensorBoard. 16 samples are generated each time.
             save_checkpoint_epochs: Number of epochs to wait between checkpoints. Note
                 that this does not affect TensorBoard logging frequency.
             n_gpus: The number of GPUs to use for training and evaluation. If 0, the
@@ -74,12 +70,7 @@ class Trainer:
         self.skip_grad_norm = skip_grad_norm
         self.log_dir = log_dir or tempfile.mkdtemp()
         self.save_checkpoint_epochs = save_checkpoint_epochs
-
         self.sample_epochs = sample_epochs
-        self.sample_fn = sample_fn
-        if self.sample_epochs:
-            msg = "sample_fn cannot be None if sample_epochs is not None"
-            assert self.sample_fn, msg
 
         self.device = "cuda" if n_gpus > 0 else "cpu"
         self.device_id = 0 if device_id is None and n_gpus == 1 else device_id
@@ -218,6 +209,16 @@ class Trainer:
             metrics = self._get_metrics_dict(self.eval_one_batch(x, y))
             return {k: v.item() for k, v in metrics.items()}
 
+    def sample_one_batch(self):
+        with torch.no_grad():
+            self.model.eval()
+            try:
+                # TODO(eugenhotaj): Make n_samples configurable or use batch size.
+                tensor = self.model.sample(n_samples=16)
+                self._summary_writer.add_images("sample", tensor, self._step)
+            except Exception as e:
+                print(f"Falied to sample from the model: {e}")
+
     def interleaved_train_and_eval(self, max_epochs, restore=True):
         """Trains and evaluates (after each epoch).
 
@@ -264,7 +265,7 @@ class Trainer:
                 self._summary_writer.add_scalar("speed/step", self._step, self._step)
                 self._step += 1
 
-            # Evaluate
+            # Evaluate.
             n_examples, sum_metrics = 0, collections.defaultdict(float)
             for batch in self.eval_loader:
                 batch = batch if isinstance(batch, (tuple, list)) else (batch, None)
@@ -278,10 +279,9 @@ class Trainer:
 
             self._epoch += 1
             self._save_checkpoint()
-            if self.sample_epochs and self._epoch % self.sample_epochs == 0:
-                self.model.eval()
-                with torch.no_grad():
-                    tensor = self.sample_fn(self.model)
-                self._summary_writer.add_images("sample", tensor, self._step)
+
+            # Sample.
+            if self._epoch % self.sample_epochs == 0:
+                self.sample_one_batch()
 
         self._summary_writer.close()

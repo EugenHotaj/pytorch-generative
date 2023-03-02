@@ -5,7 +5,7 @@ import unittest
 
 import torch
 
-from pytorch_generative import models, trainer
+from pytorch_generative import models
 from pytorch_generative.models import autoregressive, flow, vae
 
 
@@ -29,9 +29,6 @@ class DummyLoader:
 
 class IntegrationTests(unittest.TestCase):
     """Main (integration) tests for implemented models."""
-
-    def setUp(self):
-        trainer._N_SAMPLES = 1
 
     def _test_integration(self, module, in_channels=1, in_size=28):
         dummy_loader = DummyLoader(in_channels, in_size)

@@ -1,7 +1,5 @@
 """Implementation of the Variational Autoencoder [1] model.
 
-TODO(ehotaj): Explain.
-
 References (used throughout the code):
     [1]: https://arxiv.org/pdf/1312.6114.pdf
 """
@@ -14,7 +12,7 @@ from pytorch_generative.models import base
 from pytorch_generative.models.vae import vaes
 
 
-class VAE(base.GenerativeModel):
+class VAE(base.VariationalAutoEncoder):
     """The Variational Autoencoder model."""
 
     def __init__(
@@ -93,8 +91,7 @@ class VAE(base.GenerativeModel):
         latents = vaes.sample_from_gaussian(mean, log_std)
         return self._decoder(latents), kl_div
 
-    @torch.no_grad()
-    def sample(self, n_samples):
+    def _sample(self, n_samples):
         """Generates a batch of n_samples."""
         latent_size = self._h // 2 ** (self._total_stride // 2)
         shape = (n_samples, self._latent_channels, latent_size, latent_size)
@@ -159,20 +156,12 @@ def reproduce(
             "loss": elbo.mean(),
         }
 
-    def sample_fn(model):
-        sample = torch.sigmoid(model.sample(n_samples=16))
-        return torch.where(
-            sample < 0.5, torch.zeros_like(sample), torch.ones_like(sample)
-        )
-
     model_trainer = trainer.Trainer(
         model=model,
         loss_fn=loss_fn,
         optimizer=optimizer,
         train_loader=train_loader,
         eval_loader=test_loader,
-        sample_epochs=1,
-        sample_fn=sample_fn,
         log_dir=log_dir,
         n_gpus=n_gpus,
         device_id=device_id,

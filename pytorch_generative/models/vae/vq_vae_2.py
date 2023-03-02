@@ -18,7 +18,7 @@ from pytorch_generative.models import base
 from pytorch_generative.models.vae import vaes
 
 
-class VectorQuantizedVAE2(base.GenerativeModel):
+class VectorQuantizedVAE2(base.VariationalAutoEncoder):
     """The VQ-VAE-2 model with a latent hierarchy of depth 2."""
 
     def __init__(
@@ -108,7 +108,7 @@ class VectorQuantizedVAE2(base.GenerativeModel):
         xhat = self._decoder_b(torch.cat((self._conv(decoded_t), quantized_b), dim=1))
         return xhat, 0.5 * (vq_loss_b + vq_loss_t) + F.mse_loss(decoded_t, encoded_b)
 
-    def sample(self, n_samples):
+    def _sample(self, n_samples):
         raise NotImplementedError("VQ-VAE-2 does not support sampling.")
 
 

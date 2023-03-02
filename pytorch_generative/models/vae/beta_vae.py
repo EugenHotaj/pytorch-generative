@@ -115,20 +115,12 @@ def reproduce(
             "loss": elbo.mean(),
         }
 
-    def sample_fn(model):
-        sample = torch.sigmoid(model.sample(n_samples=16))
-        return torch.where(
-            sample < 0.5, torch.zeros_like(sample), torch.ones_like(sample)
-        )
-
     model_trainer = trainer.Trainer(
         model=model,
         loss_fn=loss_fn,
         optimizer=optimizer,
         train_loader=train_loader,
         eval_loader=test_loader,
-        sample_epochs=1,
-        sample_fn=sample_fn,
         log_dir=log_dir,
         n_gpus=n_gpus,
         device_id=device_id,

@@ -284,7 +284,7 @@ class DecoderStack(nn.Module):
         return x, kl_divs
 
 
-class VeryDeepVAE(base.GenerativeModel):
+class VeryDeepVAE(base.VariationalAutoEncoder):
     """The Very Deep VAE Model."""
 
     def __init__(
@@ -402,8 +402,7 @@ class VeryDeepVAE(base.GenerativeModel):
 
         return self._output(x), kl_div
 
-    @torch.no_grad()
-    def sample(self, n_samples):
+    def _sample(self, n_samples):
         x = torch.zeros_like(self._biases[-1]).repeat(n_samples, 1, 1, 1)
         for stack, bias in zip(self._decoder, reversed(self._biases)):
             x += bias.repeat(n_samples, 1, 1, 1)
@@ -477,20 +476,12 @@ def reproduce(
             "loss": elbo.mean(),
         }
 
-    def sample_fn(model):
-        sample = torch.sigmoid(model.sample(n_samples=16))
-        return torch.where(
-            sample < 0.5, torch.zeros_like(sample), torch.ones_like(sample)
-        )
-
     model_trainer = trainer.Trainer(
         model=model,
         loss_fn=loss_fn,
         optimizer=optimizer,
         train_loader=train_loader,
         eval_loader=test_loader,
-        sample_epochs=1,
-        sample_fn=sample_fn,
         log_dir=log_dir,
         n_gpus=n_gpus,
         device_id=device_id,

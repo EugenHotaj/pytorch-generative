@@ -16,7 +16,7 @@ from pytorch_generative.models import base
 from pytorch_generative.models.vae import vaes
 
 
-class VectorQuantizedVAE(base.GenerativeModel):
+class VectorQuantizedVAE(base.VariationalAutoEncoder):
     """The Vector Quantized Variational Autoencoder (VQ-VAE) model."""
 
     def __init__(
@@ -75,7 +75,7 @@ class VectorQuantizedVAE(base.GenerativeModel):
         quantized, quantization_loss = self._quantizer(x)
         return self._decoder(quantized), quantization_loss
 
-    def sample(self, n_samples):
+    def _sample(self, n_samples):
         raise NotImplementedError("VQ-VAE does not support sampling.")
 
 

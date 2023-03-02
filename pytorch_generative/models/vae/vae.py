@@ -23,6 +23,7 @@ class VAE(base.VariationalAutoEncoder):
         strides=[4],
         hidden_channels=64,
         residual_channels=32,
+        sample_fn=None,
     ):
         """Initializes a new VAE instance.
 
@@ -34,8 +35,9 @@ class VAE(base.VariationalAutoEncoder):
                 encoder (decoder) which downsamples (upsamples) the input by the stride.
             hidden_channels: Number of channels in (non residual block) hidden layers.
             residual_channels: Number of hidden channels in residual blocks.
+            sample_fn: See the base class.
         """
-        super().__init__()
+        super().__init__(sample_fn)
 
         self._latent_channels = latent_channels
         self._total_stride = sum(strides)

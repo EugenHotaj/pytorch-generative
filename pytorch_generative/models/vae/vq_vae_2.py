@@ -30,6 +30,7 @@ class VectorQuantizedVAE2(base.VariationalAutoEncoder):
         residual_channels=32,
         n_embeddings=128,
         embedding_dim=16,
+        sample_fn=None,
     ):
         """Initializes a new VectorQuantizedVAE2 instance.
 
@@ -42,7 +43,7 @@ class VectorQuantizedVAE2(base.VariationalAutoEncoder):
             n_embeddings: Number of VectorQuantizer embeddings.
             embedding_dim: Dimension of the VectorQuantizer embeddings.
         """
-        super().__init__()
+        super().__init__(sample_fn)
 
         self._encoder_b = vaes.Encoder(
             in_channels=in_channels,

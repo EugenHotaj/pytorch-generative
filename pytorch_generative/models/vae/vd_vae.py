@@ -296,6 +296,7 @@ class VeryDeepVAE(base.VariationalAutoEncoder):
         latent_channels=4,
         hidden_channels=16,
         bottleneck_channels=8,
+        sample_fn=None,
     ):
         """Initializes a new VeryDeepVAE instance.
 
@@ -309,8 +310,9 @@ class VeryDeepVAE(base.VariationalAutoEncoder):
             latent_channels: Number of channels in the latent code.
             hidden_channels: Number of non-bottleneck channels.
             bottleneck_channels: Number of bottleneck channels.
+            sample_fn: See the base class.
         """
-        super().__init__()
+        super().__init__(sample_fn)
 
         # Encoder.
         self._input = nn.Conv2d(

@@ -29,6 +29,7 @@ class BetaVAE(vae.VAE):
         strides=[4],
         hidden_channels=64,
         residual_channels=32,
+        sample_fn=None,
     ):
         """Initializes a new BetaVAE instance.
 
@@ -41,6 +42,7 @@ class BetaVAE(vae.VAE):
             strides: See the base class.
             hidden_channels: See the base class.
             residual_channels: See the base class.
+            sample_fn: See the base class.
         """
         super().__init__(
             in_channels,
@@ -49,6 +51,7 @@ class BetaVAE(vae.VAE):
             strides,
             hidden_channels,
             residual_channels,
+            sample_fn,
         )
         self._beta = beta
 

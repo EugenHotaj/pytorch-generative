@@ -37,15 +37,16 @@ class MaskedLinear(nn.Linear):
 class MADE(base.AutoregressiveModel):
     """The Masked Autoencoder Distribution Estimator (MADE) model."""
 
-    def __init__(self, input_dim, hidden_dims=None, n_masks=1):
+    def __init__(self, input_dim, hidden_dims=None, n_masks=1, sample_fn=None):
         """Initializes a new MADE instance.
 
         Args:
             input_dim: The dimensionality of the input.
             hidden_dims: A list containing the number of units for each hidden layer.
             n_masks: The total number of distinct masks to use during training/eval.
+            sample_fn: See the base class.
         """
-        super().__init__()
+        super().__init__(sample_fn)
         self._input_dim = input_dim
         self._dims = [self._input_dim] + (hidden_dims or []) + [self._input_dim]
         self._n_masks = n_masks
@@ -56,8 +57,7 @@ class MADE(base.AutoregressiveModel):
             in_dim, out_dim = self._dims[i], self._dims[i + 1]
             layers.append(MaskedLinear(in_dim, out_dim))
             layers.append(nn.ReLU())
-        layers[-1] = nn.Sigmoid()  # Output is binary.
-        self._net = nn.Sequential(*layers)
+        self._net = nn.Sequential(*layers[:-1])
 
     def _sample_masks(self):
         """Samples a new set of autoregressive masks.
@@ -128,7 +128,7 @@ class MADE(base.AutoregressiveModel):
         ordering = np.argsort(ordering)
         for dim in ordering:
             out = self._forward(x, masks)[:, dim]
-            out = distributions.Bernoulli(probs=out).sample()
+            out = self._sample_fn(out)
             x[:, dim] = torch.where(x[:, dim] < 0, out, x[:, dim])
         return x
 

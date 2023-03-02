@@ -18,15 +18,16 @@ from pytorch_generative.models import base
 class NADE(base.AutoregressiveModel):
     """The Neural Autoregressive Distribution Estimator (NADE) model."""
 
-    def __init__(self, input_dim, hidden_dim):
+    def __init__(self, input_dim, hidden_dim, sample_fn=None):
         """Initializes a new NADE instance.
 
         Args:
             input_dim: The dimension of the input.
             hidden_dim: The dimension of the hidden layer. NADE only supports one
                 hidden layer.
+            sample_fn: See the base class.
         """
-        super().__init__()
+        super().__init__(sample_fn)
         self._input_dim = input_dim
 
         # fmt: off

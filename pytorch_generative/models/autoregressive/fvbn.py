@@ -19,13 +19,14 @@ from pytorch_generative.models import base
 class FullyVisibleBeliefNetwork(base.AutoregressiveModel):
     """The Fully Visible Belief Network."""
 
-    def __init__(self, n_dims):
+    def __init__(self, n_dims, sample_fn=None):
         """Initializes a new FullyVisibleBeliefNetwork.
 
         Args:
             n_dims: Number of input (and output) dimensions.
+            sample_fn: See the base class.
         """
-        super().__init__()
+        super().__init__(sample_fn)
         self.n_dims = n_dims
 
         # NOTE: We use in_features=1 and always pass an input of 0 for the first Linear

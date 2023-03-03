@@ -41,7 +41,10 @@ class GenerativeModel(abc.ABC, nn.Module):
     def __call__(self, x, *args, **kwargs):
         """Saves input tensor attributes so they can be accessed during sampling."""
         if getattr(self, "_c", None) is None and x.dim() == 4:
-            _, self._c, self._h, self._w = x.shape
+            _, c, h, w = x.shape
+            self.register_buffer("_c", torch.tensor(c))
+            self.register_buffer("_h", torch.tensor(h))
+            self.register_buffer("_w", torch.tensor(w))
         return super().__call__(x, *args, **kwargs)
 
     @property

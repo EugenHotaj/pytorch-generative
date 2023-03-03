@@ -68,7 +68,7 @@ class CausalAttention(nn.Module):
 
     Autoregressive masking means that the current pixel can only attend to itself,
     pixels to the left, and pixels above. When mask_center=True, the current pixel does
-    not attent to itself.
+    not attend to itself.
 
     This Module generalizes attention to use 2D convolutions instead of fully connected
     layers. As such, the input is expected to be 4D image tensors.
@@ -202,7 +202,7 @@ class _UnnormalizedLinearCausalAttention(autograd.Function):
 # O(N) work during sampling by storing previous activations as proposed in [2].
 # TODO(eugenhotaj): This API does not match the CausalAttention API. We need
 # to add support for mask_center and extra_input. There is also a lot of shared
-# code between the two which sould be extracted. It's probably possible to
+# code between the two which should be extracted. It's probably possible to
 # have base class which does the bookkeeping and the subclasses implement
 # the actual computations.
 class LinearCausalAttention(nn.Module):
@@ -211,7 +211,7 @@ class LinearCausalAttention(nn.Module):
     NOTE: LinearCausalAttention is *much* slower than CausalAttention and should
     only be used if your model cannot fit in memory.
 
-    This implementation only requiers O(N) memory (instead of O(N^2)) for a
+    This implementation only requires O(N) memory (instead of O(N^2)) for a
     sequence of N elements (e.g. an image with N pixels). To achieve this memory
     reduction, the implementation avoids storing the full attention matrix in
     memory and instead computes the output directly as Q @ (K @ V). However, this
@@ -267,7 +267,7 @@ class LinearCausalAttention(nn.Module):
         K, V = self._kv(x).split([self._embed_channels, self._out_channels], dim=1)
         K, V = _to_multihead(K), _to_multihead(V)
 
-        # Compute the causual attention weights.
+        # Compute the causal attention weights.
         Q, K = self._feature_fn(Q), self._feature_fn(K)
         den = 1 / (torch.einsum("nlhi,nlhi->nlh", Q, K.cumsum(1)) + 1e-10)
         num = self._numerator(Q, K, V)

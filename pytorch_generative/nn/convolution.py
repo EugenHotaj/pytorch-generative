@@ -46,7 +46,7 @@ class CausalConv2d(nn.Conv2d):
 class GatedActivation(nn.Module):
     """Gated activation function as introduced in [2].
 
-    The function computes actiation_fn(f) * sigmoid(g). The f and g correspond to the
+    The function computes activation_fn(f) * sigmoid(g). The f and g correspond to the
     top 1/2 and bottom 1/2 of the input channels.
     """
 

@@ -160,7 +160,7 @@ class TopDownBlock(nn.Module):
                 approximate posterior. If not 'None' the latents are sampled from the
                 approximated posterior, otherwise the approximate posterior is not
                 computed and the latents are sampled from the prior.
-        Returs:
+        Returns:
             A tuple (activations, kl_div) where kl_div is the KL divergence between the
             approximate posterior and the prior if mixin is not None, or None otherwise.
         """
@@ -271,7 +271,7 @@ class DecoderStack(nn.Module):
         Args:
             x: Batch of inputs.
             mixin: Activations from bottom up pass. See TopDownBlock for more details.
-        Returs:
+        Returns:
             A tuple (activations, kl_divs) where kl_divs is a list of the KL divergences
             returned by all the TopDownBlocks in the stack.
         """

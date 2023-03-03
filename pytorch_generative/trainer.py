@@ -217,7 +217,7 @@ class Trainer:
                 tensor = self.model.sample(n_samples=16)
                 self._summary_writer.add_images("sample", tensor, self._step)
             except Exception as e:
-                print(f"Falied to sample from the model: {e}")
+                print(f"Failed to sample from the model: {e}")
 
     def interleaved_train_and_eval(self, max_epochs, restore=True):
         """Trains and evaluates (after each epoch).

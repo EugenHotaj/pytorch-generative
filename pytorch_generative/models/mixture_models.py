@@ -92,7 +92,7 @@ class BernoulliMixtureModel(MixtureModel):
 
     def _component_log_prob(self, x):
         logits, x = torch.broadcast_tensors(self.logits, x)
-        # binary_cross_entorpy_with_logits is equivalent to log Bern(x | p).
+        # binary_cross_entropy_with_logits is equivalent to log Bern(x | p).
         return -F.binary_cross_entropy_with_logits(logits, x, reduction="none").sum(-1)
 
     def _component_sample(self, idxs):

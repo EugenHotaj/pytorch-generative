@@ -1,4 +1,4 @@
-"""Utilities to make life easier when working with Google Colaboratory.
+"""Utilities to make life easier when working with Google Colab.
 
 Warning: This module must be imported from Colab, otherwise it will crash.
 """

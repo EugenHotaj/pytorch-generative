@@ -16,7 +16,7 @@ from torch.nn import init
 class VectorQuantizer(nn.Module):
     """A vector quantizer as introduced in [1].
 
-    Inputs are quantized to the closest embedding in Euclidian distance. The
+    Inputs are quantized to the closest embedding in Euclidean distance. The
     embeddings can be updated using either exponential moving averages or gradient
     descent.
     """
@@ -57,11 +57,11 @@ class VectorQuantizer(nn.Module):
         flat_x = x.permute(0, 2, 3, 1).contiguous().view(-1, self.embedding_dim)
         # Efficient L2 distance computation which does not require materializing the
         # huge NWH * n_embeddings * embedding_dim matrix. The computation follows
-        # straightforwardly from Euclidian distance definition. For more info, see
+        # straightforwardly from Euclidean distance definition. For more info, see
         # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.euclidean_distances.html.
         distances = (
-            torch.sum(flat_x ** 2, dim=1, keepdim=True)
-            + torch.sum(self._embedding ** 2, dim=1)
+            torch.sum(flat_x**2, dim=1, keepdim=True)
+            + torch.sum(self._embedding**2, dim=1)
             - 2 * flat_x @ self._embedding.t()
         )
 

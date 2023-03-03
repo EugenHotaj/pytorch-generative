@@ -11,7 +11,7 @@ def compute_receptive_field(model, img_size=(1, 3, 3)):
     model's output with respect to the input.
 
     Args:
-        model: Model for hich to compute the receptive field. Assumes NCHW input.
+        model: Model for which to compute the receptive field. Assumes NCHW input.
         img_size: The (channels, height, width) of the input to the model.
     """
     c, h, w = img_size

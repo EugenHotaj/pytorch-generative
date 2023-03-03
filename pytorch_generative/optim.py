@@ -11,7 +11,7 @@ from torch import optim
 class AdaBelief(optim.Optimizer):
     """Implementation of the AdaBelief algorithm proposed in [1].
 
-    NOTE: This is a minimal implementaiton which does not support weight decay
+    NOTE: This is a minimal implementation which does not support weight decay
     and AMSGrad.
 
     AdaBelief can be viewed as a variation on the Adam optimizer where the running
@@ -19,7 +19,7 @@ class AdaBelief(optim.Optimizer):
     gradient. The running variance can be interpreted as the error of estimating
     the gradient by the running mean and is used to appropriately scale the step
     size. A small error indicates a strong belief in the observation of the
-    gradient and justififies a large step size (and vice versa).
+    gradient and justifies a large step size (and vice versa).
 
     More handwavily, the running variance can also be interpreted as taking into
     account the curvature of the loss function. If the loss function has low
@@ -33,7 +33,7 @@ class AdaBelief(optim.Optimizer):
         Args:
             params: Iterable of parameters to optimize or dicts of parameter groups.
             lr: Learning rate.
-            betas: Coeficients for the running mean and variance of the gradient.
+            betas: Coefficients for the running mean and variance of the gradient.
         """
         assert 0 <= lr, f"Invalid learning rate: {lr}"
         assert 0 <= betas[0] < 1, f"Invalid beta parameter at index 0: {betas[0]}"

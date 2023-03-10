@@ -42,10 +42,23 @@ class GenerativeModel(abc.ABC, nn.Module):
         """Saves input tensor attributes so they can be accessed during sampling."""
         if getattr(self, "_c", None) is None and x.dim() == 4:
             _, c, h, w = x.shape
-            self.register_buffer("_c", torch.tensor(c))
-            self.register_buffer("_h", torch.tensor(h))
-            self.register_buffer("_w", torch.tensor(w))
+            self._create_shape_buffers(c, h, w)
         return super().__call__(x, *args, **kwargs)
+
+    def load_state_dict(self, state_dict, strict=True):
+        """Registers dynamic buffers before loading the model state."""
+        if "_c" in state_dict and not getattr(self, "_c", None):
+            c, h, w = state_dict["_c"], state_dict["_h"], state_dict["_w"]
+            self._create_shape_buffers(c, h, w)
+        super().load_state_dict(state_dict, strict)
+
+    def _create_shape_buffers(self, channels, height, width):
+        channels = channels if torch.is_tensor(channels) else torch.tensor(channels)
+        height = height if torch.is_tensor(height) else torch.tensor(height)
+        width = width if torch.is_tensor(width) else torch.tensor(width)
+        self.register_buffer("_c", channels)
+        self.register_buffer("_h", height)
+        self.register_buffer("_w", width)
 
     @property
     def device(self):

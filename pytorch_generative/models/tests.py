@@ -264,3 +264,33 @@ class AutoReshapeTest(unittest.TestCase):
             n_features=3 * 8 * 8, n_hidden_layers=2, n_hidden_features=10
         )
         self._test_auto_reshape(model)
+
+
+class MiscTests(unittest.TestCase):
+    def test_sampling_after_load(self):
+        model = models.PixelCNN(
+            in_channels=3,
+            out_channels=3,
+            n_residual=1,
+            residual_channels=1,
+            head_channels=1,
+        )
+
+        # Call forward so the dynamic shape buffers are created.
+        batch = torch.rand(2, 3, 8, 8)
+        model(batch)
+        model.sample(2)
+
+        # Load state into a fresh model.
+        state = model.state_dict()
+        model = models.PixelCNN(
+            in_channels=3,
+            out_channels=3,
+            n_residual=1,
+            residual_channels=1,
+            head_channels=1,
+        )
+        model.load_state_dict(state)
+
+        # Check that sampling works (should not raise Exceptions).
+        model.sample(2)

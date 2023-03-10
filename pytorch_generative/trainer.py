@@ -200,24 +200,24 @@ class Trainer:
         preds = self.model(x)
         return self.loss_fn(x, y, preds)
 
+    @torch.no_grad()
     def _eval_one_batch(self, x, y):
-        with torch.no_grad():
-            self.model.eval()
-            x = x.to(self.device)
-            if y is not None:
-                y = y.to(self.device)
-            metrics = self._get_metrics_dict(self.eval_one_batch(x, y))
-            return {k: v.item() for k, v in metrics.items()}
+        self.model.eval()
+        x = x.to(self.device)
+        if y is not None:
+            y = y.to(self.device)
+        metrics = self._get_metrics_dict(self.eval_one_batch(x, y))
+        return {k: v.item() for k, v in metrics.items()}
 
+    @torch.no_grad()
     def sample_one_batch(self):
-        with torch.no_grad():
-            self.model.eval()
-            try:
-                # TODO(eugenhotaj): Make n_samples configurable or use batch size.
-                tensor = self.model.sample(n_samples=16)
-                self._summary_writer.add_images("sample", tensor, self._step)
-            except Exception as e:
-                print(f"Failed to sample from the model: {e}")
+        self.model.eval()
+        try:
+            # TODO(eugenhotaj): Make n_samples configurable or use batch size.
+            tensor = self.model.sample(n_samples=16)
+            self._summary_writer.add_images("sample", tensor, self._step)
+        except Exception as e:
+            print(f"Failed to sample from the model: {e}")
 
     def interleaved_train_and_eval(self, max_epochs, restore=True):
         """Trains and evaluates (after each epoch).

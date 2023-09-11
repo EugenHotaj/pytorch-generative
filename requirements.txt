@@ -3,4 +3,4 @@ numpy>=1.18.4
 tensorboard>=2.3.0
 torch>=1.5.1
 torchvision>=0.6.1
-sklearn>=1.2.1
+scikit-learn>=1.2.1

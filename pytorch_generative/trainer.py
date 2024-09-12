@@ -113,7 +113,7 @@ class Trainer:
 
     def _find_latest_epoch(self):
         files = glob.glob(self._path("trainer_state_[0-9]*.ckpt"))
-        epochs = sorted([int(re.findall(r"\d+", f)[0]) for f in files])
+        epochs = sorted([int(re.findall(r"\d+", f)[-1]) for f in files])
         if not epochs:
             raise FileNotFoundError(f"No checkpoints found in {self.log_dir}.")
         print(f"Found {len(epochs)} saved checkpoints.")
